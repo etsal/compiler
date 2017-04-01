@@ -4,7 +4,7 @@
 # tokenizer for a simple expression evaluator for
 # numbers and +,-,*,/
 # ------------------------------------------------------------
-from ply.ply import lex  as lex
+from ply import lex  as lex
 
 # List of token names.   This is always required
 tokens = (
