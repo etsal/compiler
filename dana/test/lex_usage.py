@@ -4,10 +4,7 @@
 # tokenizer for a simple expression evaluator for
 # numbers and +,-,*,/
 # ------------------------------------------------------------
-import sys
-sys.path.insert(0, "../lib/ply")
-
-import ply.lex as lex
+from ply.ply import lex  as lex
 
 # List of token names.   This is always required
 tokens = (
