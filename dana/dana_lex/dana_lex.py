@@ -84,8 +84,6 @@ t_LESS = r'<'
 t_GREATER = r'>' 
 t_LESSEQUAL = r'<='
 t_GREATEREQUAL = r'>=' 
-
-
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_LBRACK = r'\['
@@ -93,22 +91,41 @@ t_RBRACK = r'\]'
 t_COMMA = r','
 t_COLON = r':'
 t_ASSIGN = r':='
-t_NEWLINE = r'\n'
+
+##########################################
+#TODO: Reset column each time line changes
+##########################################
+def t_NEWLINE(t):
+	r'\n+'
+	t.lexer.lineno += len(t.value)
+	return t
 
 t_ignore_WHITESPACE = r'\s'
+
+#########################################
 #TODO: Add comment handling
+#########################################
 
-t_NAME = r'[a-zA-Z_][a-zA-Z_0-9]*'
-
-#t_NUMBER = r'[0-9]+'
-def t_number(t):
+def t_NUMBER(t):
 	r'\d+'
 	t.value = int(t.value)
 	return t
 
+##########################################
 #TODO: Add escape sequence handling
-t_CHAR = '\'.\''
-t_STRING = '\"((\\\")|.)*\"'
+##########################################
+
+def t_CHAR(t):
+	r'''('\\.')|('.')'''
+	return t
+
+def t_STRING(t):
+	r'"(?:\\.|[^"\\])*"'
+	return t
+
+def t_NAME(t):
+	r'[a-zA-Z_][a-zA-Z_0-9]*'
+	return t
 
 def t_error(t):
     print("Illegal character detected:\t %s" % t.value[0])
