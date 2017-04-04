@@ -99,7 +99,13 @@ t_ignore_WHITESPACE = r'\s'
 #TODO: Add comment handling
 
 t_NAME = r'[a-zA-Z_][a-zA-Z_0-9]*'
-t_NUMBER = r'[0-9]+'
+
+#t_NUMBER = r'[0-9]+'
+def t_number(t):
+	r'\d+'
+	t.value = int(t.value)
+	return t
+
 #TODO: Add escape sequence handling
 t_CHAR = '\'.\''
 t_STRING = '\"((\\\")|.)*\"'
