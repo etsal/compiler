@@ -124,7 +124,8 @@ def t_NAME(t):
 	return t
 
 def t_error(t):
-    print("Illegal character detected:\t %s" % t.value[0])
+    print("Tokenization error. Offending character:\t %s" % t.value[0])
+    print("Warning: Parsing might be _fantastically_ broken from here")
     t.lexer.skip(1)
 
 tokens =  separators + elements + operators \
