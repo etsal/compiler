@@ -92,9 +92,6 @@ t_COMMA = r','
 t_COLON = r':'
 t_ASSIGN = r':='
 
-##########################################
-#TODO: Reset column each time line changes
-##########################################
 def t_NEWLINE(t):
 	r'\n+'
 	t.lexer.lineno += len(t.value)
@@ -121,6 +118,8 @@ def t_STRING(t):
 
 def t_NAME(t):
 	r'[a-zA-Z][a-zA-Z_0-9]*'
+	if t.value in reserved:
+		t.type = reserved[t.value]
 	return t
 
 def t_error(t):
