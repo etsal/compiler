@@ -91,17 +91,17 @@ t_RBRACK = r'\]'
 t_COMMA = r','
 t_COLON = r':'
 t_ASSIGN = r':='
+t_ignore_WHITESPACE = r'\s'
+
+####################################
+#NOTE: Tabs are handled like spaces#
+####################################
 
 def t_NEWLINE(t):
 	r'\n+'
 	t.lexer.lineno += len(t.value)
 	return t
 
-t_ignore_WHITESPACE = r'\s'
-
-#########################################
-#TODO: Add comment handling
-#########################################
 
 def t_NUMBER(t):
 	r'\d+'
@@ -121,6 +121,13 @@ def t_NAME(t):
 	if t.value in reserved:
 		t.type = reserved[t.value]
 	return t
+
+def t_ignore_LINECOMMENT(t):
+	r'\#([^\n])*\n'
+
+#########################################
+#TODO: Add comment handling
+#########################################
 
 def t_error(t):
     print("Tokenization error. Offending character:\t %s" % t.value[0])
