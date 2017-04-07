@@ -92,9 +92,6 @@ t_COMMA = r','
 t_COLON = r':'
 t_ASSIGN = r':='
 
-##########################################
-#TODO: Reset column each time line changes
-##########################################
 def t_NEWLINE(t):
 	r'\n+'
 	t.lexer.lineno += len(t.value)
@@ -112,21 +109,22 @@ def t_NUMBER(t):
 	return t
 
 def t_CHAR(t):
-	r"\'(([^\\\'\"\n]?)|((\\[ts0\\\'\"])|\\x[0-9a-f]{2,2}))\'"
+	r"\'(([^\\\'\"\n]?)|((\\[rts0\\\'\"])|\\x[0-9a-f]{2,2}))\'"
 	return t
 
-#################THIS IS WRONG NEEDS TO CHANGE#####################
 def t_STRING(t):
-	r'"(?:\\.|[^"\\])*"'
+	r'"((\\\")|(\')|[^"\n])*"'
 	return t
-##################################################################
 
 def t_NAME(t):
-	r'[a-zA-Z_][a-zA-Z_0-9]*'
+	r'[a-zA-Z][a-zA-Z_0-9]*'
+	if t.value in reserved:
+		t.type = reserved[t.value]
 	return t
 
 def t_error(t):
-    print("Illegal character detected:\t %s" % t.value[0])
+    print("Tokenization error. Offending character:\t %s" % t.value[0])
+    print("Warning: Parsing might be _fantastically_ broken from here")
     t.lexer.skip(1)
 
 tokens =  separators + elements + operators \
