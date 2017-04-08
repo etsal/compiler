@@ -1,5 +1,5 @@
 import sys
-from ply.lex import lex as lex
+import ply.lex
 
 separators = (
     'LPAREN',
@@ -172,6 +172,8 @@ def test():
 
     return
 
+def lex():
+    return ply.lex.lex()
 
 if __name__ == "__main__" :
 
