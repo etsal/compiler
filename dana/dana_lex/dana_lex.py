@@ -126,10 +126,6 @@ def t_NAME(t):
 def t_ignore_LINECOMMENT(t):
     r'\#([^\n])*\n'
 
-#########################################
-#TODO: Add comment handling
-#########################################
-
 states = (
     ('comment', 'exclusive'),
 )
