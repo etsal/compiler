@@ -101,7 +101,7 @@ t_ignore_WHITESPACE = r'\s'
 def t_NEWLINE(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
-    return t
+    return None 
 
 
 def t_NUMBER(t):
@@ -160,8 +160,11 @@ def test():
         return;
 
     lexer = lex()
-
-    program = open(sys.argv[1], 'r')
+    try:
+        program = open(sys.argv[1], 'r')
+    except:
+        print("Unable to open file. Exiting...")
+        return
     lexer.input(program.read())
 
     while True:
