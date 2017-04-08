@@ -4,9 +4,14 @@ from lexer import tokens
 from ply.yacc import yacc as yacc
 
 precedence = (
-    ('left', 'PLUS', 'MINUS'),
-    ('left', 'STAR', 'SLASH'),
-    
+    ('left', 'PLUS', 'MINUS', 'VERTICAL'),
+    ('left', 'STAR', 'SLASH', 'PERCENT', 'AMPERSAND'),
+    ('right', 'UPLUS', 'UMINUS', 'EXCLAMATION'), 
+    ('nonassoc', 'EQUAL', 'UNEQUAL', \
+        'LESS', 'GREATER', 'LESSEQUAL', 'GREATEREQUAL'),
+    ('right', 'NOT'),
+    ('left', 'AND'),
+    ('right', 'OR'), 
 )
 
 def p_lvalue(p):
@@ -23,8 +28,8 @@ def p_expr(p):
              | CHAR 
              | lvalue
              | LPAREN expr RPAREN
-             | PLUS expr
-             | MINUS expr
+             | PLUS expr %prec UPLUS
+             | MINUS expr %prec UMINUS
              | expr PLUS expr
              | expr MINUS expr
              | expr STAR expr
