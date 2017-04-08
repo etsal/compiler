@@ -14,13 +14,63 @@ precedence = (
     ('right', 'OR'), 
 )
 
+# In order to convert the extended BNF grammar given to regular BNF,
+# intermediate tokens are created. These are noted with comments
+
+def p_data_type(p):
+    '''
+        data_type : INT
+                  | BYTE
+    '''
+def p_type(p):
+    '''
+        type : data_type 
+             | data_type index_list
+    '''
+
+# Helper token
+def p_index_list(p):
+    '''
+        index_list : index_list LBRACK NUMBER RBRACK
+                   | LBRACK NUMBER RBRACK 
+    '''
+
+def p_var_def(p):
+    '''
+        var_def : VAR name_list IS type 
+    '''
+# Helper token
+def p_name_list(p):
+    '''
+        name_list : name_list NAME
+                  | NAME
+    '''
+
+def p_proc_call(p):
+    '''
+        proc_call : NAME 
+                  | NAME COLON expr_list 
+    '''
+
+def p_func_call(p):
+    '''
+        func_call : NAME LPAREN RPAREN
+                  | NAME LPAREN expr_list RPAREN
+    '''
+
+# Helper token
+def p_expr_list(p):
+    '''
+        expr_list : expr_list COMMA expr 
+                  | expr 
+    '''
+
 def p_lvalue(p):
     '''
         lvalue : NAME 
                | STRING 
                | lvalue LBRACK expr RBRACK
     '''
-#NOTE: Insert "| func_call" to the rule below once it is defined
 
 def p_expr(p):
     '''
@@ -28,6 +78,7 @@ def p_expr(p):
              | CHAR 
              | lvalue
              | LPAREN expr RPAREN
+             | func_call
              | PLUS expr %prec UPLUS
              | MINUS expr %prec UMINUS
              | expr PLUS expr
@@ -59,7 +110,7 @@ def p_cond(p):
     '''
 
 def p_error(p):
-    print("Parsing error on token {}", p)
+    print("Parsing error on token", p)
     return;
 
 def test():
