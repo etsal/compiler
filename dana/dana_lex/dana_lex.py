@@ -65,7 +65,8 @@ reserved = {
 ignored = (
     'LINECOMMENT',
     'WHITESPACE',
-    'FULLCOMMENT',
+    'COMMENT_START',
+    'COMMENT_END',
 )
 
 
@@ -91,36 +92,62 @@ t_RBRACK = r'\]'
 t_COMMA = r','
 t_COLON = r':'
 t_ASSIGN = r':='
+t_ignore_WHITESPACE = r'\s'
+
+####################################
+#NOTE: Tabs are handled like spaces#
+####################################
 
 def t_NEWLINE(t):
-	r'\n+'
-	t.lexer.lineno += len(t.value)
-	return t
+    r'\n+'
+    t.lexer.lineno += len(t.value)
+    return t
 
-t_ignore_WHITESPACE = r'\s'
+
+def t_NUMBER(t):
+    r'\d+'
+    t.value = int(t.value)
+    return t
+
+def t_CHAR(t):
+    r"\'(([^\\\'\"\n]?)|((\\[rts0\\\'\"])|\\x[0-9a-f]{2,2}))\'"
+    return t
+
+def t_STRING(t):
+    r'"((\\\")|(\')|[^"\n])*"'
+    return t
+
+def t_NAME(t):
+    r'[a-zA-Z][a-zA-Z_0-9]*'
+    if t.value in reserved:
+	t.type = reserved[t.value]
+    return t
+
+def t_ignore_LINECOMMENT(t):
+    r'\#([^\n])*\n'
 
 #########################################
 #TODO: Add comment handling
 #########################################
 
-def t_NUMBER(t):
-	r'\d+'
-	t.value = int(t.value)
-	return t
+states = (
+    ('comment', 'exclusive'),
+)
 
-def t_CHAR(t):
-	r"\'(([^\\\'\"\n]?)|((\\[rts0\\\'\"])|\\x[0-9a-f]{2,2}))\'"
-	return t
+def t_COMMENT_START(t):
+    r'\(\*'
+    t.lexer.push_state('comment')	
 
-def t_STRING(t):
-	r'"((\\\")|(\')|[^"\n])*"'
-	return t
+t_comment_COMMENT_START = t_COMMENT_START
+	
+def t_comment_COMMENT_END(t):
+    r'\*\)'
+    t.lexer.pop_state()	
 
-def t_NAME(t):
-	r'[a-zA-Z][a-zA-Z_0-9]*'
-	if t.value in reserved:
-		t.type = reserved[t.value]
-	return t
+# Not ACTUALLY an error state; rather, 
+# it catches everything in the comments 
+def t_comment_error(t):
+    t.lexer.skip(1)
 
 def t_error(t):
     print("Tokenization error. Offending character:\t %s" % t.value[0])
