@@ -110,7 +110,7 @@ def t_NUMBER(t):
     return t
 
 def t_CHAR(t):
-    r"\'(([^\\\'\"\n]?)|((\\[rts0\\\'\"])|\\x[0-9a-f]{2,2}))\'"
+    r"\'(([^\\\'\"\n]?)|((\\[rtns0\\\'\"])|\\x[0-9a-f]{2,2}))\'"
     return t
 
 def t_STRING(t):
@@ -120,7 +120,7 @@ def t_STRING(t):
 def t_NAME(t):
     r'[a-zA-Z][a-zA-Z_0-9]*'
     if t.value in reserved:
-	t.type = reserved[t.value]
+        t.type = reserved[t.value]
     return t
 
 def t_ignore_LINECOMMENT(t):
