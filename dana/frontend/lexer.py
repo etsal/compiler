@@ -40,6 +40,7 @@ reserved = {
     'and' : 'AND',
     'as' : 'AS',
     'begin' : 'BEGIN',
+    'break' : 'BREAK',
     'byte' : 'BYTE',
     'continue' : 'CONTINUE',
     'decl' : 'DECL',
