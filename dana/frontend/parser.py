@@ -17,18 +17,81 @@ precedence = (
 # In order to convert the extended BNF grammar given to regular BNF,
 # intermediate tokens are created. These are noted with comments
 
+def p_program(p):
+    '''
+        program : func_def
+    '''
 
+def p_func_def(p):
+    '''
+        func_def : DEF header block
+                 | DEF header local_def_list block
+    '''
 
+# Helper token
+def p_local_def_list(p):
+    '''
+        local_def_list : local_def_list local_def 
+                       | local_def 
+    '''
+
+def p_header(p):
+    '''
+        header : NAME maybe_data_type maybe_parameter_list
+    '''
+
+# Helper token
+def p_maybe_data_type(p):
+    '''
+        maybe_data_type : IS data_type
+                        |
+    '''
+
+# Helper token
+def p_maybe_parameter_list(p):
+    '''
+        maybe_parameter_list : COLON fpar_def 
+                             | COLON fpar_def parameter_list
+                             |
+    '''
+
+# Helper token
+def p_parameter_list(p):
+    '''
+        parameter_list : parameter_list COMMA fpar_def
+                       | COMMA fpar_def
+    '''
+
+def p_fpar_def(p):
+    '''
+        fpar_def : name_list AS fpar_type
+    '''
+
+# Helper token
+def p_name_list(p):
+    '''
+        name_list : name_list NAME
+                  | NAME
+    '''
 
 def p_data_type(p):
     '''
         data_type : INT
                   | BYTE
     '''
+
 def p_type(p):
     '''
         type : data_type 
              | data_type index_list
+    '''
+
+def p_fpar_type(p):
+    '''
+        fpar_type : type 
+                  | REF data_type
+                  | data_type LBRACK RBRACK 
+                  | data_type LBRACK RBRACK index_list 
     '''
 
 # Helper token
@@ -38,15 +101,21 @@ def p_index_list(p):
                    | LBRACK NUMBER RBRACK 
     '''
 
+def p_local_def(p):
+    '''
+        local_def : func_def
+                  | func_decl
+                  | var_def
+    '''
+
+def p_func_decl(p):
+    '''
+        func_decl : DECL header 
+    '''
+
 def p_var_def(p):
     '''
-        var_def : VAR NAME_list IS type 
-    '''
-# Helper token
-def p_NAME_list(p):
-    '''
-        NAME_list : NAME_list NAME
-                  | NAME
+        var_def : VAR name_list IS type 
     '''
 
 def p_stmt(p):
@@ -68,7 +137,7 @@ def p_stmt(p):
              | CONTINUE COLON NAME
     '''
 
-#Helper token
+# Helper token
 def p_elif_chain(p):
     '''
        elif_chain : elif_chain ELIF cond COLON block 
@@ -81,7 +150,7 @@ def p_block(p):
     '''
 
 
-#Helper token
+# Helper token
 def p_stmt_list(p):
     '''
        stmt_list : stmt_list stmt 
@@ -165,9 +234,9 @@ def test():
 
 #    lexer.input(program.read())
     
-    parser = yacc(start='expr')
+    parser = yacc(start='program')
 
-    parser.parse(program.read(),debug=False)
+    parser.parse(program.read(),debug=True)
 
     return
     
