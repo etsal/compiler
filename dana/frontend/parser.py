@@ -17,6 +17,9 @@ precedence = (
 # In order to convert the extended BNF grammar given to regular BNF,
 # intermediate tokens are created. These are noted with comments
 
+
+
+
 def p_data_type(p):
     '''
         data_type : INT
@@ -37,13 +40,52 @@ def p_index_list(p):
 
 def p_var_def(p):
     '''
-        var_def : VAR name_list IS type 
+        var_def : VAR NAME_list IS type 
     '''
 # Helper token
-def p_name_list(p):
+def p_NAME_list(p):
     '''
-        name_list : name_list NAME
+        NAME_list : NAME_list NAME
                   | NAME
+    '''
+
+def p_stmt(p):
+    '''
+        stmt : SKIP
+             | lvalue ASSIGN expr
+             | proc_call
+             | EXIT
+             | RETURN COLON expr
+             | IF cond COLON block 
+             | IF cond COLON block ELSE COLON block 
+             | IF cond COLON block elif_chain 
+             | IF cond COLON block elif_chain ELSE COLON block 
+             | LOOP COLON block
+             | LOOP NAME COLON block
+             | BREAK
+             | BREAK COLON NAME
+             | CONTINUE
+             | CONTINUE COLON NAME
+    '''
+
+#Helper token
+def p_elif_chain(p):
+    '''
+       elif_chain : elif_chain ELIF cond COLON block 
+                  | ELIF cond COLON block 
+    '''
+
+def p_block(p):
+    '''
+        block : BEGIN stmt_list END
+    '''
+
+
+#Helper token
+def p_stmt_list(p):
+    '''
+       stmt_list : stmt_list stmt 
+                 | stmt 
     '''
 
 def p_proc_call(p):
