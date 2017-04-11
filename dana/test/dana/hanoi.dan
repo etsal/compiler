@@ -1,0 +1,27 @@
+def solve
+    def hanoi: rings as int, source target auxiliary as byte []
+        (* Move does not do the actual swapping *)
+        def move: source target as byte[]
+            begin    
+            writeString: "Moving from "
+            writeString: source
+            writeString: " to "
+            writeString target
+            writeString: ".\n"
+            end
+        begin
+        if rings >= 1:
+            begin
+                hanoi: rings - 1, source, auxiliary, target
+                move: source, target
+                hanoi: rings - 1, auxiliary, target, source
+            end
+        end
+        var numberOfRings is int
+        
+        begin   
+            writeString: "Rings: "
+            numberOfRings := readInteger()
+            hanoi: numberOfRings, "left", "right", "middle" 
+        end
+
