@@ -24,8 +24,6 @@ def ast_node():
         def wrapper(p):
             func(p)
             p[0] = Node(func.__name__, *p[1:])            
-            if func.__name__ == "p_program":
-                print(str(p[0]))
         # Line number update needed for the parser
         wrapper.co_firstlineno = func.__code__.co_firstlineno
         return wrapper
@@ -267,6 +265,8 @@ def p_error(p):
     print("Parsing error on token", p)
     return;
 
+ast = None
+
 def test():
     lexer = lex() 
     try:
@@ -279,10 +279,8 @@ def test():
     
     parser = yacc(start='program')
 
-    parser.parse(program.read(),debug=False)
-    
-
-
+    ast = parser.parse(program.read(),debug=False)
+    print(ast)
     return
     
 
