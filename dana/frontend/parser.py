@@ -1,7 +1,9 @@
 import sys
+from functools import wraps
 from lexer import lex as lex 
 from lexer import tokens
 from ply.yacc import yacc as yacc
+from helper.tree import Node as Node  
 
 precedence = (
     ('left', 'PLUS', 'MINUS', 'VERTICAL'),
@@ -14,14 +16,29 @@ precedence = (
     ('right', 'OR'), 
 )
 
+# Decorator for building the AST
+def ast_node():
+    def decorate(func):
+        # Needed to preserve the original function's name
+        @wraps(func)
+        def wrapper(p):
+            func(p)
+            
+        # Line number update needed for the parser
+        wrapper.co_firstlineno = func.__code__.co_firstlineno
+        return wrapper
+    return decorate
+
+
 # In order to convert the extended BNF grammar given to regular BNF,
 # intermediate tokens are created. These are noted with comments
-
+@ast_node()
 def p_program(p):
     '''
         program : func_def
     '''
 
+@ast_node()
 def p_func_def(p):
     '''
         func_def : DEF header block
@@ -29,18 +46,21 @@ def p_func_def(p):
     '''
 
 # Helper token
+@ast_node()
 def p_local_def_list(p):
     '''
         local_def_list : local_def_list local_def 
                        | local_def 
     '''
 
+@ast_node()
 def p_header(p):
     '''
         header : NAME maybe_data_type maybe_parameter_list
     '''
 
 # Helper token
+@ast_node()
 def p_maybe_data_type(p):
     '''
         maybe_data_type : IS data_type
@@ -48,6 +68,7 @@ def p_maybe_data_type(p):
     '''
 
 # Helper token
+@ast_node()
 def p_maybe_parameter_list(p):
     '''
         maybe_parameter_list : COLON fpar_def 
@@ -56,36 +77,42 @@ def p_maybe_parameter_list(p):
     '''
 
 # Helper token
+@ast_node()
 def p_parameter_list(p):
     '''
         parameter_list : parameter_list COMMA fpar_def
                        | COMMA fpar_def
     '''
 
+@ast_node()
 def p_fpar_def(p):
     '''
         fpar_def : name_list AS fpar_type
     '''
 
 # Helper token
+@ast_node()
 def p_name_list(p):
     '''
         name_list : name_list NAME
                   | NAME
     '''
 
+@ast_node()
 def p_data_type(p):
     '''
         data_type : INT
                   | BYTE
     '''
 
+@ast_node()
 def p_type(p):
     '''
         type : data_type 
              | data_type index_list
     '''
 
+@ast_node()
 def p_fpar_type(p):
     '''
         fpar_type : type 
@@ -95,12 +122,14 @@ def p_fpar_type(p):
     '''
 
 # Helper token
+@ast_node()
 def p_index_list(p):
     '''
         index_list : index_list LBRACK NUMBER RBRACK
                    | LBRACK NUMBER RBRACK 
     '''
 
+@ast_node()
 def p_local_def(p):
     '''
         local_def : func_def
@@ -108,16 +137,19 @@ def p_local_def(p):
                   | var_def
     '''
 
+@ast_node()
 def p_func_decl(p):
     '''
         func_decl : DECL header 
     '''
 
+@ast_node()
 def p_var_def(p):
     '''
         var_def : VAR name_list IS type 
     '''
 
+@ast_node()
 def p_stmt(p):
     '''
         stmt : SKIP
@@ -138,12 +170,14 @@ def p_stmt(p):
     '''
 
 # Helper token
+@ast_node()
 def p_elif_chain(p):
     '''
        elif_chain : elif_chain ELIF cond COLON block 
                   | ELIF cond COLON block 
     '''
 
+@ast_node()
 def p_block(p):
     '''
         block : BEGIN stmt_list END
@@ -151,18 +185,21 @@ def p_block(p):
 
 
 # Helper token
+@ast_node()
 def p_stmt_list(p):
     '''
        stmt_list : stmt_list stmt 
                  | stmt 
     '''
 
+@ast_node()
 def p_proc_call(p):
     '''
         proc_call : NAME 
                   | NAME COLON expr_list 
     '''
 
+@ast_node()
 def p_func_call(p):
     '''
         func_call : NAME LPAREN RPAREN
@@ -170,12 +207,14 @@ def p_func_call(p):
     '''
 
 # Helper token
+@ast_node()
 def p_expr_list(p):
     '''
         expr_list : expr_list COMMA expr 
                   | expr 
     '''
 
+@ast_node()
 def p_lvalue(p):
     '''
         lvalue : NAME 
@@ -183,6 +222,7 @@ def p_lvalue(p):
                | lvalue LBRACK expr RBRACK
     '''
 
+@ast_node()
 def p_expr(p):
     '''
         expr : NUMBER 
@@ -205,6 +245,7 @@ def p_expr(p):
 
     '''
 
+@ast_node()
 def p_cond(p):
     '''
         cond : expr 
@@ -236,7 +277,9 @@ def test():
     
     parser = yacc(start='program')
 
-    parser.parse(program.read(),debug=True)
+    parser.parse(program.read(),debug=False)
+    
+
 
     return
     
