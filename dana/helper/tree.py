@@ -8,7 +8,7 @@ class Node:
     def __str__(self):
         result = self.name
         for child in self.children:
-             result += "\n----" + "\n----".join(str(child).split('\n'))
+                 result += "\n" + "\n|".join(str(child).split('\n'))
         return result
 
     def add(self, child):
