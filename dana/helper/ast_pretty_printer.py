@@ -1,7 +1,5 @@
 import sys
 
-colored_list = ['\033[0m', '\033[91m', '\033[92m', '\033[93m', '\033[94m','\033[95m',]
-
 try:
     input_file = open(sys.argv[1], 'r')
 except IOError:
