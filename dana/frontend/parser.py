@@ -23,7 +23,9 @@ def ast_node():
         @wraps(func)
         def wrapper(p):
             func(p)
-            
+            p[0] = Node(func.__name__, *p[1:])            
+            if func.__name__ == "p_program":
+                print(str(p[0]))
         # Line number update needed for the parser
         wrapper.co_firstlineno = func.__code__.co_firstlineno
         return wrapper
