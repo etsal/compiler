@@ -205,6 +205,7 @@ def p_expr(p):
 
     '''
 
+# Helper token
 def p_xcond(p):
     '''
         xcond : LPAREN xcond RPAREN
@@ -218,7 +219,6 @@ def p_xcond(p):
               | expr LESSEQUAL expr
               | expr GREATEREQUAL expr
     '''
-
 
 def p_cond(p):
     '''
