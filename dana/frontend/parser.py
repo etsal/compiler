@@ -205,19 +205,25 @@ def p_expr(p):
 
     '''
 
+def p_xcond(p):
+    '''
+        xcond : LPAREN xcond RPAREN
+              | NOT cond
+              | cond AND cond
+              | cond OR cond
+              | expr EQUAL expr
+              | expr UNEQUAL expr
+              | expr LESS expr
+              | expr GREATER expr
+              | expr LESSEQUAL expr
+              | expr GREATEREQUAL expr
+    '''
+
+
 def p_cond(p):
     '''
-        cond : expr 
-             | LPAREN cond RPAREN 
-             | NOT cond
-             | cond AND cond
-             | cond OR cond
-             | expr EQUAL expr
-             | expr UNEQUAL expr
-             | expr LESS expr
-             | expr GREATER expr
-             | expr LESSEQUAL expr 
-             | expr GREATEREQUAL expr 
+        cond : expr
+             | xcond
     '''
 
 def p_error(p):
@@ -234,9 +240,9 @@ def test():
 
 #    lexer.input(program.read())
     
-    parser = yacc(start='program')
+    parser = yacc(start='program', write_tables=False)
 
-    parser.parse(program.read(),debug=True)
+    parser.parse(program.read())
 
     return
     
