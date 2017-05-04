@@ -281,6 +281,7 @@ def test():
 
     ast = parser.parse(program.read(),debug=False)
     print(ast)
+    print("TOP: " + *ast.top())
     return
     
 
