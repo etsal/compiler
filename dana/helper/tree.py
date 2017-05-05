@@ -1,8 +1,10 @@
+from collections import deque as deque
+
 class Node(object):
  
     def __init__(self, name, *args, **kwargs):
         self.name = name
-        self.children = [] 
+        self.children = deque() 
         for child in args:
             self.children.append(child)
         self.is_terminal = len(self.children) == 0 
