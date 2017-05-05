@@ -2,3 +2,4 @@
 *.swp
 parsetab.py
 parser.out
+ast
