@@ -228,7 +228,6 @@ def p_expr_list(p):
 def p_lvalue(p):
     '''
         lvalue : name 
-               | string 
                | lvalue LBRACK expr RBRACK
     '''
 
@@ -237,6 +236,7 @@ def p_expr(p):
     '''
         expr : number 
              | char 
+             | string 
              | lvalue
              | LPAREN expr RPAREN
              | func_call
