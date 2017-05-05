@@ -1,10 +1,13 @@
 class Node:
  
-    def __init__(self, name, *args):
+    def __init__(self, name, is_terminal, *args):
         self.name = name
         self.children = [] 
+        self.is_terminal = is_terminal
         for child in args:
             self.children.append(child)
+
+
     def __str__(self):
         result = self.name
         for child in self.children:

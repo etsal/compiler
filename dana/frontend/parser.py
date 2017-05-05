@@ -23,7 +23,7 @@ def ast_node():
         @wraps(func)
         def wrapper(p):
             func(p)
-            p[0] = Node(func.__name__, *p[1:])            
+            p[0] = Node(func.__name__, False, *p[1:])            
         # Line number update needed for the parser
         wrapper.co_firstlineno = func.__code__.co_firstlineno
         return wrapper
@@ -281,7 +281,7 @@ def test():
 
     ast = parser.parse(program.read(),debug=False)
     print(ast)
-    print("TOP: " + *ast.top())
+    print("TOP: " + ast.top().name)
     return
     
 
