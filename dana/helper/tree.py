@@ -17,13 +17,3 @@ class Node(object):
                  result += "\n" + "\n|".join(str(child).split('\n'))
         return result 
 
-    def add(self, child):
-        self.children.append(child)
-
-    def top(self):
-        return self.children[0]
-
-    def remove(self):
-        return self.children.pop(0)
-
-
