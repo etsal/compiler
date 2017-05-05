@@ -1,7 +1,7 @@
 import sys
 from functools import wraps
-from frontend.lexer import lex as lex, tokens as tokens
 from ply.yacc import yacc as yacc
+from frontend.lexer import lex as lex, tokens as tokens
 from helper.tree import Node as Node  
 
 precedence = (
@@ -320,7 +320,8 @@ def p_error(p):
     print("Parsing error on token", p)
     return;
 
-ast = None
+def parser(start):
+    return yacc(start=start, write_tables=False)
 
 def test():
     lexer = lex() 
