@@ -1,7 +1,6 @@
 import sys
 from functools import wraps
-from lexer import lex as lex 
-from lexer import tokens
+from frontend.lexer import lex as lex, tokens as tokens
 from ply.yacc import yacc as yacc
 from helper.tree import Node as Node  
 
