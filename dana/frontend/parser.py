@@ -22,12 +22,23 @@ def ast_node():
         @wraps(func)
         def wrapper(p):
             func(p)
-            p[0] = Node(func.__name__, False, *p[1:])            
+            p[0] = Node(func.__name__, *p[1:])            
         # Line number update needed for the parser
         wrapper.co_firstlineno = func.__code__.co_firstlineno
         return wrapper
     return decorate
 
+def ast_value(dana_type = None):
+    def decorate(func):
+        # Needed to preserve the original function's name
+        @wraps(func)
+        def wrapper(p):
+            func(p)
+            p[0] = Node(func.__name__, value = p[1])            
+        # Line number update needed for the parser
+        wrapper.co_firstlineno = func.__code__.co_firstlineno
+        return wrapper
+    return decorate
 
 # In order to convert the extended BNF grammar given to regular BNF,
 # intermediate tokens are created. These are noted with comments
@@ -55,7 +66,7 @@ def p_local_def_list(p):
 @ast_node()
 def p_header(p):
     '''
-        header : NAME maybe_data_type maybe_parameter_list
+        header : name maybe_data_type maybe_parameter_list
     '''
 
 # Helper token
@@ -93,8 +104,8 @@ def p_fpar_def(p):
 @ast_node()
 def p_name_list(p):
     '''
-        name_list : name_list NAME
-                  | NAME
+        name_list : name_list name 
+                  | name
     '''
 
 @ast_node()
@@ -124,8 +135,8 @@ def p_fpar_type(p):
 @ast_node()
 def p_index_list(p):
     '''
-        index_list : index_list LBRACK NUMBER RBRACK
-                   | LBRACK NUMBER RBRACK 
+        index_list : index_list LBRACK number RBRACK
+                   | LBRACK number RBRACK 
     '''
 
 @ast_node()
@@ -161,11 +172,11 @@ def p_stmt(p):
              | IF cond COLON block elif_chain 
              | IF cond COLON block elif_chain ELSE COLON block 
              | LOOP COLON block
-             | LOOP NAME COLON block
+             | LOOP name COLON block
              | BREAK
-             | BREAK COLON NAME
+             | BREAK COLON name
              | CONTINUE
-             | CONTINUE COLON NAME
+             | CONTINUE COLON name
     '''
 
 # Helper token
@@ -194,15 +205,15 @@ def p_stmt_list(p):
 @ast_node()
 def p_proc_call(p):
     '''
-        proc_call : NAME 
-                  | NAME COLON expr_list 
+        proc_call : name 
+                  | name COLON expr_list 
     '''
 
 @ast_node()
 def p_func_call(p):
     '''
-        func_call : NAME LPAREN RPAREN
-                  | NAME LPAREN expr_list RPAREN
+        func_call : name LPAREN RPAREN
+                  | name LPAREN expr_list RPAREN
     '''
 
 # Helper token
@@ -216,16 +227,16 @@ def p_expr_list(p):
 @ast_node()
 def p_lvalue(p):
     '''
-        lvalue : NAME 
-               | STRING 
+        lvalue : name 
+               | string 
                | lvalue LBRACK expr RBRACK
     '''
 
 @ast_node()
 def p_expr(p):
     '''
-        expr : NUMBER 
-             | CHAR 
+        expr : number 
+             | char 
              | lvalue
              | LPAREN expr RPAREN
              | func_call
@@ -236,16 +247,15 @@ def p_expr(p):
              | expr STAR expr
              | expr SLASH expr
              | expr PERCENT expr
-             | TRUE
-             | FALSE
+             | boolean 
              | EXCLAMATION expr
              | expr AMPERSAND expr
              | expr VERTICAL expr 
 
     '''
 
-@ast_node()
 # Helper token
+@ast_node()
 def p_xcond(p):
     '''
         xcond : LPAREN xcond RPAREN
@@ -267,6 +277,45 @@ def p_cond(p):
              | xcond
     '''
 
+# Helper tokens from here on downwards
+# Used to build the AST more easily
+
+@ast_value()
+@ast_node()
+def p_name(p):
+   '''
+        name : NAME
+   ''' 
+
+@ast_value()
+@ast_node()
+def p_char(p): 
+   '''
+        char : CHAR 
+   ''' 
+
+@ast_value()
+@ast_node()
+def p_number(p):
+   '''
+        number : NUMBER 
+   ''' 
+    
+@ast_value()
+@ast_node()
+def p_boolean(p):
+   '''
+        boolean : TRUE
+                | FALSE
+   ''' 
+    
+@ast_value()
+@ast_node()
+def p_string(p):
+   '''
+        string : STRING 
+   ''' 
+ 
 def p_error(p):
     print("Parsing error on token", p)
     return;
@@ -287,7 +336,7 @@ def test():
 
     ast = parser.parse(program.read(),debug=False)
     print(ast)
-    print("TOP: " + ast.top().name)
+    #print("TOP: " + ast.top().name)
 
     return
     
