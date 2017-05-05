@@ -246,19 +246,26 @@ def p_expr(p):
     '''
 
 @ast_node()
+# Helper token
+def p_xcond(p):
+    '''
+        xcond : LPAREN xcond RPAREN
+              | NOT cond
+              | cond AND cond
+              | cond OR cond
+              | expr EQUAL expr
+              | expr UNEQUAL expr
+              | expr LESS expr
+              | expr GREATER expr
+              | expr LESSEQUAL expr
+              | expr GREATEREQUAL expr
+    '''
+
+@ast_node()
 def p_cond(p):
     '''
-        cond : expr 
-             | LPAREN cond RPAREN 
-             | NOT cond
-             | cond AND cond
-             | cond OR cond
-             | expr EQUAL expr
-             | expr UNEQUAL expr
-             | expr LESS expr
-             | expr GREATER expr
-             | expr LESSEQUAL expr 
-             | expr GREATEREQUAL expr 
+        cond : expr
+             | xcond
     '''
 
 def p_error(p):
@@ -277,11 +284,12 @@ def test():
 
 #    lexer.input(program.read())
     
-    parser = yacc(start='program')
+    parser = yacc(start='program', write_tables=False)
 
     ast = parser.parse(program.read(),debug=False)
     print(ast)
     print("TOP: " + ast.top().name)
+
     return
     
 
