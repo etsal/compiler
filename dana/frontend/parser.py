@@ -281,28 +281,24 @@ def p_cond(p):
 # Used to build the AST more easily
 
 @ast_value()
-@ast_node()
 def p_name(p):
    '''
         name : NAME
    ''' 
 
 @ast_value()
-@ast_node()
 def p_char(p): 
    '''
         char : CHAR 
    ''' 
 
 @ast_value()
-@ast_node()
 def p_number(p):
    '''
         number : NUMBER 
    ''' 
     
 @ast_value()
-@ast_node()
 def p_boolean(p):
    '''
         boolean : TRUE
@@ -310,7 +306,6 @@ def p_boolean(p):
    ''' 
     
 @ast_value()
-@ast_node()
 def p_string(p):
    '''
         string : STRING 
