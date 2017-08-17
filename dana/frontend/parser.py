@@ -108,7 +108,7 @@ def p_name_list(p):
                   | name
     '''
 
-@ast_node()
+@ast_value()
 def p_data_type(p):
     '''
         data_type : INT
@@ -126,9 +126,9 @@ def p_type(p):
 def p_fpar_type(p):
     '''
         fpar_type : type 
-                  | REF data_type
-                  | data_type LBRACK RBRACK 
-                  | data_type LBRACK RBRACK index_list 
+                  | ref data_type
+                  | data_type empty_brackets 
+                  | data_type empty_brackets index_list 
     '''
 
 # Helper token
@@ -279,6 +279,20 @@ def p_cond(p):
 
 # Helper tokens from here on downwards
 # Used to build the AST more easily
+
+
+@ast_node()
+def p_ref(p):
+   '''
+        ref : REF 
+   ''' 
+        
+@ast_node()
+def p_empty_brackets(p):
+   '''
+        empty_brackets : LBRACK RBRACK 
+   ''' 
+    
 
 @ast_value()
 def p_name(p):
