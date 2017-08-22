@@ -1,5 +1,6 @@
 import sys
 from collections import deque as deque
+from copy import deepcopy as deepcopy
 from frontend.lexer import lex as lex, tokens as tokens
 from frontend.parser import parser as parser
 from helper.tree import Node as Node  
@@ -46,7 +47,7 @@ class SemanticsChecker(object):
         new_elems_copy.reverse()
         main_deque.extendleft(new_elems_copy) 
 
-    def traverse_type(self, dana_type):
+    def get_total_data_type(self, dana_type):
         total_type = DanaType("void")
         
         unprocessed = deque(dana_type.children)
@@ -54,7 +55,7 @@ class SemanticsChecker(object):
             child = unprocessed.popleft()
             try:
                 if child.name == "p_data_type":
-                    total_type.base = self.traverse_data_type(child)
+                    total_type.base = self.get_primitive_data_type(child)
                 elif child.name == "number":
                     total_type.reflevel += child.value  
                 else:
@@ -74,10 +75,10 @@ class SemanticsChecker(object):
                     total_type.ref = True
 
                 elif child.name == "p_data_type":
-                    total_type.base = self.traverse_data_type(child)
+                    total_type.base = self.get_primitive_data_type(child)
 
                 elif child.name == "p_type":
-                    total_type = self.traverse_type(child)
+                    total_type = self.get_total_data_type(child)
 
                 elif child.name == "p_empty_brackets":                
                      total_type.dimensions += [0]
@@ -92,7 +93,7 @@ class SemanticsChecker(object):
         return total_type
 
     # Traverses both p_var_def and p_fpar_def tokens
-    def traverse_def(self, dana_def):
+    def get_variable_symbols(self, dana_def):
         symbols = deque() 
         symbol_type = None
         unprocessed = deque(dana_def.children)
@@ -103,7 +104,7 @@ class SemanticsChecker(object):
                    symbols.append(child.value)
 
                 elif child.name == "p_type":
-                   symbol_type = self.traverse_type(child) 
+                   symbol_type = self.get_total_data_type(child) 
 
                 elif child.name == "p_fpar_type":
                    symbol_type = self.traverse_fpar_type(child)
@@ -117,7 +118,7 @@ class SemanticsChecker(object):
         return [(symbol, symbol_type) for symbol in symbols]
     
 
-    def traverse_data_type(self, dana_data_type):
+    def get_primitive_data_type(self, dana_data_type):
         if dana_data_type.value == "INT":
             return "int"
 
@@ -126,7 +127,7 @@ class SemanticsChecker(object):
 
 
     # Traverse function header, extracting the type of the function it refers to
-    def traverse_header(self, dana_header):        
+    def get_function_type(self, dana_header):        
         function_name = None
         function_type = "void"
         argument_types = []
@@ -140,11 +141,11 @@ class SemanticsChecker(object):
                     function_name = child.value
 
                 elif child.name == "p_data_type":
-                    function_type = traverse_data_type(child)
+                    function_type = get_primitive_data_type(child)
 
                 # We just get the type of the parameter
                 elif child.name == "p_fpar_def":
-                    argument_types += [y for (x,y) in self.traverse_def(child)] 
+                    argument_types += [y for (x,y) in self.get_variable_symbols(child)] 
 
                 else:
                     self.extendleft_no_reverse(unprocessed, child.children)
@@ -157,7 +158,10 @@ class SemanticsChecker(object):
     
 
     # TODO: Exit more abruptly on error (with an appropriate exception probably)
-    def traverse_function(self, dana_function):
+    def get_function_scope(self, dana_function):
+
+        current_function = self.get_function_type(dana_function.children[1])
+        self.scope_stack.add_scope(current_function)
 
         dana_block = None
         unprocessed = deque(dana_function.children)
@@ -167,7 +171,7 @@ class SemanticsChecker(object):
 
                 if child.name == "p_func_decl" or child.name == "p_func_def":                     
                     
-                    func_symbol = self.traverse_header(child.children[1])                                         
+                    func_symbol = self.get_function_type(child.children[1])                                         
 
                     if self.scope_stack.in_current_scope(func_symbol):
                         print("Symbol {} already defined in current scope!".format(func_symbol))
@@ -176,16 +180,14 @@ class SemanticsChecker(object):
 
                     # If child is a full function definition, check its semantics, too
                     if child.name == "p_func_def":
-                        self.scope_stack.add_scope()
-                        self.traverse_function(child)
-                        self.scope_stack.pop_scope()
+                        self.get_function_scope(child)
 
                 # If we just find a p_fpar_def token, that means that it's a parameter of the 
                 # function being traversed. Likewise, if we find a p_var_def token, it's a 
                 # local definition
 
                 elif child.name == "p_var_def" or child.name == "p_fpar_def":
-                    new_symbols = self.traverse_def(child)
+                    new_symbols = self.get_variable_symbols(child)
 
                     for new_symbol in new_symbols:
                         if self.scope_stack.in_current_scope(new_symbol):
@@ -213,8 +215,232 @@ class SemanticsChecker(object):
         
         # self.traverse_block(dana_block)
 
+        self.scope_stack.pop_scope()
 
-    # TODO: Recursively determine the type of each expression, attach it to it
+
+    ########################################################################################
+    ########################################################################################
+    ########################################################################################
+
+    def traverse_statement(self, dana_statement):
+        first_token = dana_statement.children[0]
+
+
+        if first_token == "SKIP":
+            pass 
+
+
+        elif first_token == "RETURN" or first_token == "EXIT":
+            if first_token == "RETURN":
+                return_expression = dana_statement.children[2]
+                return_type = self.traverse_expression(return_expression)
+            else:
+                return_type = DanaType("void")
+
+            current_function = self.stack.top_function()
+            if return_type != current_function[1]:
+                print("Type mismatch: Function {} returns {}, but return expression is of type {}"
+                            .format(current_function[0], current_function[1], return_type))
+            
+
+        elif first_token == "IF":
+            traverse_if_statement(dana_statement)
+
+
+        elif first_token == "LOOP":
+            # If there is a label, store it
+            if len(dana_statement.children) == 4:
+                this.stack.push_symbol((dana_statement.children[1].value, DanaType("label")))
+
+            looped_block = dana_statement.children[-1]
+            traverse_block(looped_block)
+
+
+        # These two are handled identically at a semantic level
+        elif first_token == "BREAK" or first_token == "CONTINUE":
+            if len(dana_statement.children) > 1:
+                label_name = dana_statement.children[2].value
+                if not self.scope.in_stack(label_name):
+                    print("Label not found: {}".format(label_name))
+                symbol_type = self.scope_stack.first_type(label_name)
+
+                if symbol_type is None:
+                    print("Label named {} not found!".format(label_name))
+                    return
+
+                if symbol_type != DanaType("label"):
+                    print("Nonlabel id {} used as label".format(label_name))
+                        
+
+        elif first_token.name == "p_lvalue":
+           lvalue_type = self.traverse_lvalue(dana_statement.children[0]) 
+           expr_type = self.traverse_expr(dana_statement.children[2]) 
+
+           if lvalue_type != expr_type:
+                print("Lvalue is of type {}, but is assigned an expression of type {}".format(lvalue_type, expr_type))
+
+
+        # Procs are have return type void by design, so no need to check that
+        elif first_token.name == "p_proc_call":
+            process_name = first_token.children[0]
+            if not self.scope_stack.in_stack(process_name):
+                print("Process {} not defined".format(process_name))
+            definition_type = self.stack.first_type(dana_statement.children[0].value) 
+            call_ops = traverse_call(dana_statement)
+
+            if definition_type != DanaType("void", ops = call_ops):
+                print("Problem by process call {}".format(first_token.children[0].value))
+
+                 
+    def traverse_lvalue(self, dana_lvalue):
+        first_token = dana_lvalue.children[1]
+        if first_token.name == name:
+            if not self.scope_stack.in_stack(first_token.value):
+                print("Symbol {} not defined!".format(name))
+          
+            return copy.deepcopy(self.scope_stack.first_type(name)) 
+        else:
+            
+            base_type = self.traverse_lvalue(first_token) 
+            expr_type = self.traverse_expr(dana_lvalue.children[3])
+            if expr_type != DanaType("int"):
+                print("Expression used as index is of type {}".format(expr_type))
+            if not base_type.dimensions:
+                print("Nonarray lvalue dereferenced") 
+            base_type.dimensions = base_type.dimensions[:-1]
+            return base_type
+             
+
+    def traverse_call(self, dana_call):
+        call_ops = []
+        unprocessed = deque(dana_call.children)
+        while unprocessed:
+            child = unprocessed.popleft()
+            try:
+                if child.name == "p_expr":
+                    call_ops += self.traverse_expr(child)
+
+                else:
+                    self.extendleft_no_reverse(unprocessed, child.children) 
+        
+            except AttributeError:
+                continue
+        
+        return call_ops
+
+
+    def traverse_cond(self, dana_cond):
+        first_token = dana_cond.children[0]
+        if first_token == "(":
+            self.traverse_cond(dana_cond.children[2])
+
+
+        elif first_token == "NOT":
+            self.traverse_cond(dana_cond.chilren[1])
+
+
+        elif first_token == "p_cond":
+            self.traverse_cond(dana_cond.children[0])
+            self.traverse_cond(dana_cond.children[2])
+
+        elif first_token.name == "p_expr":
+            if len(dana_cond.children) == 1:
+                expr_type = self.traverse_expr(first_token)
+                if expr_type != DanaType("logic"):
+                    print("Expression used in condition has no truth value")
+            else:
+                op1_type = self.traverse_expr(dana_cond.children[0])
+                op2_type = self.traverse_expr(dana_cond.children[2])
+                if op1_type != op2_type:
+                    print("Type mismatch between expressions being compared. Types are {} and {}".format(op1_type, op2_type))
+                elif op1_type not in [DanaType("int"), DanaType("byte")]:
+                    print("Comparison between expressions of a nonordered type")
+                
+
+    def traverse_expr(self, dana_expr):
+        first_token = dana_expr.children[0]
+        if first_token == "LPAREN":
+            return self.traverse_expr(dana_expr.children[1])
+
+
+        elif first_token in ["PLUS", "MINUS"]:
+            expr_type = self.traverse_expr(dana_expr.children[1])
+            if expr_type != DanaType("int"):
+                print("Unary sign operator applied to nonint expression")
+            return expr_type
+
+
+        elif first_token == "EXCLAMATION":
+            expr_type = self.traverse_expr(dana_expr.children[1])
+            if expr_type != DanaType("byte"):
+                print("Negation operator ! applied to nonbyte expression")
+            return expr_type
+        elif first_token.name == "p_number":
+            return DanaType("int")
+        elif first_token.name == "p_char":
+            return DanaType("byte")
+        elif first_token.name == "p_string":
+            return DanaType("byte", [0])
+        elif first_token.name == "p_boolean":
+            return DanaType("logic")
+        elif first_token.name == "p_lvalue":
+            return self.traverse_lvalue(first_token) 
+
+
+        elif first_token.name == "p_expr":
+            operation = dana_expr.children[1]
+            if operation in ["PLUS", "MINUS", "STAR", "SLASH", "PERCENT"]:
+                
+                op1_type = self.traverse_expr(dana_expr.children[0])
+                op2_type = self.traverse_expr(dana_expr.children[2])
+                if op1_type != op2_type:
+                    print("Type mismatch between expressions being compared. Types are {} and {}".format(op1_type, op2_type))
+                elif op1_type not in [DanaType("int"), DanaType("byte")]:
+                    print("Arithmetic operation between expressions of that are not of type int or byte")
+            
+                return op1_type
+
+            elif operation in ["AMPERSAND", "VERTICAL"]:
+                op1_type = self.traverse_expr(dana_expr.children[0])
+                op2_type = self.traverse_expr(dana_expr.children[2])
+                if op1_type != DanaType("byte") or op1_type != DanaType("byte"):
+                    print("Logical operation between expressions that are not of type byte")
+            
+                return DanaType("logic")
+
+                        
+
+        elif first_token.name == "p_func_call":
+            function_name = first_token.children[0]
+            if not self.scope_stack.in_stack(function_name):
+                print("Process {} not defined".format(function_name))
+            definition_type = self.stack.first_type(dana_statement.children[0].value) 
+            call_ops = traverse_call(dana_expr)
+
+            if definition_type.ops != call_ops:
+                print("Function {} not called with proper arguments".format(first_token.children[0].value))
+            return DanaType(definition_type.base, definition_type.dimensions)
+
+    def traverse_if_statement(self, dana_if_statement):
+        unprocessed = deque(dana_elif_chain.children)
+        while unprocessed:
+            child = unprocessed.popleft()
+            try:
+                if child.name == "p_cond":
+                    self.traverse_cond(child)
+
+
+                elif child.name == "p_block": 
+                    self.traverse_block(child)
+
+
+                else:
+                    self.extendleft_no_reverse(unprocessed, child.children) 
+        
+            except AttributeError:
+                continue
+
+
     # Traverse statement block, checking its symbols against the current stack
     def traverse_block(self, dana_block):
 
@@ -225,18 +451,18 @@ class SemanticsChecker(object):
         while unprocessed:
             child = unprocessed.popleft()
             try:
-                if child.name == "p_name":
-                    if all((child.value, DanaType("void", 0)) not in scope for scope in self.scope_stack.stack):
-                        print("Symbol not found! Offending value:\t" + child.value)
-                self.extendleft_no_reverse(unprocessed, child.children)
+                if child.name == "p_stmt":
+                    self.traverse_statement(child) 
+
+
+                else:
+                    self.extendleft_no_reverse(unprocessed, child.children)
             except AttributeError:
                 continue
 
         
     def check(self):
-        self.scope_stack.add_scope()
-        self.traverse_function(self.ast.children[0]) 
-        self.scope_stack.pop_scope()
+        self.get_function_scope(self.ast.children[0]) 
         
 
 def test():

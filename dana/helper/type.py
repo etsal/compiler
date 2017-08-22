@@ -3,13 +3,14 @@ class DanaType(object):
         "byte", "int",  \
         # Internal datatypes
         "logic", "void", \
+        "label",
     ]   
  
     # base is the argument giving the base type
     # From it, we can construct new types by either
     # turning it into a reference, or by turning it
     # into an array of set size
-    def __init__(self, base, dimensions = [], ops = None, ref = False):
+    def __init__(self, base, dimensions = [], ops = [], ref = False):
 #        if base not in self.base_types:
 #            raise ValueError("Base type {} invalid".format(base)) 
 #        if base in ["logic", "void"] and dimensions !=  []:
@@ -24,9 +25,8 @@ class DanaType(object):
         result = self.base
         for ref in dimensions:
             result += "[{}]".format(ref) 
-        if ops:
-            for operand in ops:
-                result += "\nArg:\t{}".format(operand) 
+        for operand in ops:
+            result += "\nArg:\t{}".format(operand) 
         return result 
 
     def __eq__(self, other_type):
