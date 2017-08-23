@@ -10,27 +10,32 @@ class DanaType(object):
     # From it, we can construct new types by either
     # turning it into a reference, or by turning it
     # into an array of set size
-    def __init__(self, base, dimensions = [], ops = [], ref = False):
-#        if base not in self.base_types:
-#            raise ValueError("Base type {} invalid".format(base)) 
-#        if base in ["logic", "void"] and dimensions !=  []:
-#            raise ValueError("Danatype cannot have dimensions")
+    def __init__(self, base, dims = [], ops = [], ref = False):
+        if base not in self.base_types:
+            raise ValueError("Base type {} invalid".format(base)) 
+        if base in ["logic", "void"] and dims !=  []:
+            raise ValueError("Danatype {} cannot have dimensions {}".format(base, dims))
+            
 
         self.base = base
-        self.dimensions = dimensions 
+        self.dims = dims 
         self.ops = ops
         self.ref = ref
 
     def __str__(self):
-        result = self.base
-        for ref in dimensions:
-            result += "[{}]".format(ref) 
-        for operand in ops:
+        if self.base is not None:
+            result = self.base
+        else:
+            result = "???"
+        for dim in self.dims:
+            result += "[{}]".format(dim) if dim > 0 else "[]" 
+        for operand in self.ops:
             result += "\nArg:\t{}".format(operand) 
         return result 
 
     def __eq__(self, other_type):
-        return self.base == other_type.base and self.dimensions == other_type.dimensions and self.ops == other_type.ops
+        return self.base == other_type.base and self.dims == other_type.dims and self.ops == other_type.ops
 
-            
+    def __ne__(self, other_type):
+        return not self.__eq__(other_type)            
     
