@@ -22,13 +22,13 @@ def ast_node():
         @wraps(func)
         def wrapper(p):
             func(p)
-            p[0] = Node(func.__name__, *p[1:])            
+            p[0] = Node(func.__name__, *p[1:])
         # Line number update needed for the parser
         wrapper.co_firstlineno = func.__code__.co_firstlineno
         return wrapper
     return decorate
 
-def ast_value(dana_type = None):
+def ast_value():
     def decorate(func):
         # Needed to preserve the original function's name
         @wraps(func)
