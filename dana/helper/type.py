@@ -30,7 +30,7 @@ class DanaType(object):
         for dim in self.dims:
             result += "[{}]".format(dim) if dim > 0 else "[]" 
         for operand in self.ops:
-            result += "\nArg:\t{}".format(operand) 
+            result += " (Arg: {})".format(operand) 
         return result 
 
     def __eq__(self, other_type):
