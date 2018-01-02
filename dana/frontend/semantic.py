@@ -16,38 +16,49 @@ stack = ScopeStack([Scope(symbols = builtins)])
 def get_expr_type(dana_expr):
     first_token = dana_expr.children[0]
 
+    # Subtree: "(" <expr> ")"
     if first_token == "(":
         return get_expr_type(dana_expr.children[1])
 
+    #Subtree: ("+" | "-") <expr>
     elif first_token in ["+", "-"]:
         expr_type = get_expr_type(dana_expr.children[1])
         if expr_type != DanaType("int"):
             print("Unary sign operator applied to nonint expression")
         return expr_type
 
+    #Subtree: "!" <expr>
     elif first_token == "!":
         expr_type = get_expr_type(dana_expr.children[1])
         if expr_type != DanaType("byte"):
             print("Negation operator ! applied to nonbyte expression")
         return expr_type
 
+    #Subtree: <int-const>
     elif first_token.name == "p_number":
         return DanaType("int")
-
+    
+    #Subtree: <char-const>
     elif first_token.name == "p_char":
         return DanaType("byte")
 
+    #Subtree: <l-value>
     elif first_token.name == "p_string":
         return DanaType("byte", [0])
 
+    #Subtree: "true" | "false"
     elif first_token.name == "p_boolean":
         return DanaType("logic")
 
+    #Subtree: <lvalue>
     elif first_token.name == "p_lvalue":
         return get_lvalue_type(first_token) 
 
+    #Subtree: <expr> ("+" | "-" | "*" | "/" | "%" ) <expr> | <expr> ("&" | "|") <expr>
     elif first_token.name == "p_expr":
         operation = dana_expr.children[1]
+
+        #Subtree: <expr> ("+" | "-" | "*" | "/" | "%" ) <expr> 
         if operation in ["+", "-", "STAR", "SLASH", "PERCENT"]:
             
             op1_type = get_expr_type(dana_expr.children[0])
@@ -59,6 +70,7 @@ def get_expr_type(dana_expr):
         
             return op1_type
 
+        #Subtree: <expr> ("&" | "|") <expr>
         elif operation in ["&", "|"]:
             op1_type = get_expr_type(dana_expr.children[0])
             op2_type = get_expr_type(dana_expr.children[2])
@@ -67,6 +79,7 @@ def get_expr_type(dana_expr):
         
             return DanaType("logic")
 
+    #Subtree: <func-call>
     elif first_token.name == "p_func_call":
         function_name = first_token.children[0].value
         if not stack.name_in_stack(function_name):
@@ -81,23 +94,29 @@ def get_expr_type(dana_expr):
 
 def verify_cond(dana_cond):
     first_token = dana_cond.children[0]
+
+    #Subtree: "(" <cond> ")"
     if first_token == "(":
-        verify_cond(dana_cond.children[2])
+        verify_cond(dana_cond.children[1])
 
-
+    #Subtree: "not" <cond>
     elif first_token == "not":
         verify_cond(dana_cond.chilren[1])
 
 
+    #Subtree: <cond> ("and" | "or") <cond>
     elif first_token == "p_cond":
         verify_cond(dana_cond.children[0])
         verify_cond(dana_cond.children[2])
 
+    #Subtree: <expr> | <expr> ("=" | "<>" | "<" | ">" | "<=" | ">=") <expr>
     elif first_token.name == "p_expr":
+        #Subtree: <expr> 
         if len(dana_cond.children) == 1:
             expr_type = get_expr_type(first_token)
             if expr_type != DanaType("logic"):
                 print("Expression used in condition has no truth value")
+        #Subtree: <expr> ("=" | "<>" | "<" | ">" | "<=" | ">=") <expr>
         else:
             op1_type = get_expr_type(dana_cond.children[0])
             op2_type = get_expr_type(dana_cond.children[2])
@@ -106,17 +125,6 @@ def verify_cond(dana_cond):
             elif op1_type not in [DanaType("int"), DanaType("byte")]:
                 print("Comparison between expressions of a nonordered type")
                     
-
-    elif first_token.name == "p_func_call":
-        function_name = first_token.children[0]
-        if not stack.in_stack(function_name):
-            print("Process {} not defined".format(function_name))
-        definition_type = stack.first_type(dana_statement.children[0].value) 
-        call_ops = get_call_ops(dana_expr)
-
-        if definition_type.ops != call_ops:
-            print("Function {} not called with proper arguments".format(first_token.children[0].value))
-        return DanaType(definition_type.base, definition_type.dims)
 
 
 def verify_statement(dana_statement):
@@ -252,9 +260,11 @@ def verify_block(dana_block):
     unprocessed = deque([dana_block])
     while unprocessed:
         child = unprocessed.popleft()
+        #For "begin", "end"    
         if isinstance(child, str):
             continue
 
+        #For "stmt"
         elif child.name == "p_stmt":
             verify_statement(child) 
 
