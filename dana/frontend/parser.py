@@ -15,30 +15,29 @@ precedence = (
     ('right', 'OR'), 
 )
 
-# Decorator for building the AST
-def ast_node():
+
+#Base decorator for all tokens
+def base_decorator(is_value):
     def decorate(func):
         # Needed to preserve the original function's name
         @wraps(func)
         def wrapper(p):
             func(p)
-            p[0] = Node(func.__name__, *p[1:])
+            if is_value:
+                p[0] = Node(func.__name__, value = p[1], lineno = p.lineno(0)) 
+            else:
+                p[0] = Node(func.__name__, *p[1:], lineno = p.lineno(0))
         # Line number update needed for the parser
         wrapper.co_firstlineno = func.__code__.co_firstlineno
         return wrapper
     return decorate
 
 def ast_value():
-    def decorate(func):
-        # Needed to preserve the original function's name
-        @wraps(func)
-        def wrapper(p):
-            func(p)
-            p[0] = Node(func.__name__, value = p[1])            
-        # Line number update needed for the parser
-        wrapper.co_firstlineno = func.__code__.co_firstlineno
-        return wrapper
-    return decorate
+    return base_decorator(True)
+
+def ast_node():
+    return base_decorator(False)
+
 
 # In order to convert the extended BNF grammar given to regular BNF,
 # intermediate tokens are created. These are noted with comments

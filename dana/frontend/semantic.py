@@ -181,6 +181,7 @@ def verify_statement(dana_statement):
        expr_type = get_expr_type(dana_statement.children[2]) 
 
        if lvalue_type != expr_type:
+            print("{}", first_token.lineno, end="")
             print("Lvalue is of type {}, but is assigned an expression of type {}".format(lvalue_type, expr_type))
 
 
@@ -345,7 +346,7 @@ def test():
         return
     lexer = lex()  
     yacc = parser(start='program')
-    ast = yacc.parse(program.read(),debug=False)
+    ast = yacc.parse(program.read(),tracking=True,debug=False)
 
     main_function = ast.children[0]
     verify_function(main_function)        
