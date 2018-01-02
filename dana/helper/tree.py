@@ -8,6 +8,7 @@ class Node(object):
         for child in args:
             self.children.append(child)
         self.value = kwargs.get("value", None)
+        self.linespan = kwargs.get("linespan", (0,0))
 
     def __str__(self):
         result = self.name

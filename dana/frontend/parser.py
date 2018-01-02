@@ -24,9 +24,9 @@ def base_decorator(is_value):
         def wrapper(p):
             func(p)
             if is_value:
-                p[0] = Node(func.__name__, value = p[1], lineno = p.lineno(0)) 
+                p[0] = Node(func.__name__, value = p[1], linespan = p.linespan(0))
             else:
-                p[0] = Node(func.__name__, *p[1:], lineno = p.lineno(0))
+                p[0] = Node(func.__name__, *p[1:], linespan = p.linespan(0))
         # Line number update needed for the parser
         wrapper.co_firstlineno = func.__code__.co_firstlineno
         return wrapper
