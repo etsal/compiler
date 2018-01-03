@@ -6,7 +6,7 @@ def solve
             writeString: "Moving from "
             writeString: source
             writeString: " to "
-            writeString target
+            writeString: target
             writeString: ".\n"
             end
         begin
