@@ -1,0 +1,26 @@
+def main
+    var table is int[9]
+    var input is byte[150]
+    var digit is int 
+    var i is int
+
+    begin
+    (* Read digits until 0 is found *) 
+    i := 0
+    loop:
+        begin
+        table[i] := 0
+        if i = 9 : begin break end
+        else : begin i := i + 1 end
+        end
+
+    loop:
+        begin 
+        digit := readInteger()
+        if digit = 0: begin break end
+        table[digit - 1] := table[digit - 1] + 1
+
+        end
+        
+    end
+
