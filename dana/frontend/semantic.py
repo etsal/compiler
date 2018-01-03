@@ -188,7 +188,10 @@ def verify_statement(dana_statement):
        lvalue_type = get_lvalue_type(dana_statement.children[0]) 
        expr_type = get_expr_type(dana_statement.children[2]) 
 
-       if lvalue_type != expr_type:
+       if lvalue_type.dims:
+            print("Line {}: ".format(dana_statement.linespan), end="")
+            print("Lvalue has to be nonarray, but is {}".format(lvalue_type))
+       elif lvalue_type != expr_type:
             print("Line {}: ".format(dana_statement.linespan), end="")
             print("Lvalue is of type {}, but is assigned an expression of type {}".format(lvalue_type, expr_type))
 
@@ -230,7 +233,7 @@ def verify_if_statement(dana_if_statement):
         else:
             extendleft_no_reverse(unprocessed, child.children)     
 
-#Subtree: <id> | <string-literal> | <lvalue> "[" <expr> "]"
+#Subtree: <id> | <string> | <lvalue> "[" <expr> "]"
 def get_lvalue_type(dana_lvalue):
     first_token = dana_lvalue.children[0]
     #Subtree: <id>
@@ -239,7 +242,9 @@ def get_lvalue_type(dana_lvalue):
             print("Symbol {} not defined!".format(name))
       
         return copy.deepcopy(stack.name_type(first_token.value)) 
-    #WARNING: NEED TO HANDLE <string-literal>
+    #Subtree: <string>
+    elif first_token.name == "p_string":
+        return DanaType("byte", dims = [len(first_token.value) + 1])
     #Subtree <lvalue> "[" <expr> "]"
     else:
         
