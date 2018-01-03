@@ -24,6 +24,7 @@ def get_expr_type(dana_expr):
     elif first_token in ["+", "-"]:
         expr_type = get_expr_type(dana_expr.children[1])
         if expr_type != DanaType("int"):
+            print("Lines {}: ".format(dana_expr.linespan), end="")
             print("Unary sign operator applied to nonint expression")
         return expr_type
 
@@ -31,6 +32,7 @@ def get_expr_type(dana_expr):
     elif first_token == "!":
         expr_type = get_expr_type(dana_expr.children[1])
         if expr_type != DanaType("byte"):
+            print("Lines {}: ".format(dana_expr.linespan), end="")
             print("Negation operator ! applied to nonbyte expression")
         return expr_type
 
@@ -48,7 +50,7 @@ def get_expr_type(dana_expr):
 
     #Subtree: "true" | "false"
     elif first_token.name == "p_boolean":
-        return DanaType("logic")
+        return DanaType("byte")
 
     #Subtree: <lvalue>
     elif first_token.name == "p_lvalue":
@@ -64,8 +66,10 @@ def get_expr_type(dana_expr):
             op1_type = get_expr_type(dana_expr.children[0])
             op2_type = get_expr_type(dana_expr.children[2])
             if op1_type != op2_type:
+                print("Lines {}: ".format(dana_expr.linespan), end="")
                 print("Type mismatch between expressions being compared. Types are {} and {}".format(op1_type, op2_type))
             elif op1_type not in [DanaType("int"), DanaType("byte")]:
+                print("Lines {}: ".format(dana_expr.linespan), end="")
                 print("Arithmetic operation between expressions of that are not of type int or byte")
         
             return op1_type
@@ -75,18 +79,21 @@ def get_expr_type(dana_expr):
             op1_type = get_expr_type(dana_expr.children[0])
             op2_type = get_expr_type(dana_expr.children[2])
             if op1_type != DanaType("byte") or op1_type != DanaType("byte"):
+                print("Lines {}: ".format(dana_expr.linespan), end="")
                 print("Logical operation between expressions that are not of type byte")
         
-            return DanaType("logic")
+            return DanaType("byte")
 
     #Subtree: <func-call>
     elif first_token.name == "p_func_call":
         function_name = first_token.children[0].value
         if not stack.name_in_stack(function_name):
+            print("Lines {}: ".format(dana_expr.linespan), end="")
             print("Process {} not defined".format(function_name))
         call_ops = get_call_ops(dana_expr)
 
         if stack.name_type(function_name).ops != call_ops:
+            print("Lines {}: ".format(dana_expr.linespan), end="")
             print("Function {} not called with proper arguments".format(first_token.children[0].value))
         
         function_type = stack.name_type(function_name)
@@ -115,15 +122,18 @@ def verify_cond(dana_cond):
         #Subtree: <expr> 
         if len(dana_cond.children) == 1:
             expr_type = get_expr_type(first_token)
-            if expr_type != DanaType("logic"):
-                print("Expression used in condition has no truth value")
+            if expr_type != DanaType("byte"):
+                print("Lines {}: ".format(dana_cond.linespan), end="")
+                print("Expression used as condition has type {}".format(expr_type))
         #Subtree: <expr> ("=" | "<>" | "<" | ">" | "<=" | ">=") <expr>
         else:
             op1_type = get_expr_type(dana_cond.children[0])
             op2_type = get_expr_type(dana_cond.children[2])
             if op1_type != op2_type:
+                print("Lines {}: ".format(dana_cond.linespan), end="")
                 print("Type mismatch between expressions being compared. Types are {} and {}".format(op1_type, op2_type))
             elif op1_type not in [DanaType("int"), DanaType("byte")]:
+                print("Lines {}: ".format(dana_cond.linespan), end="")
                 print("Comparison between expressions of a nonordered type")
                     
 
@@ -141,15 +151,17 @@ def verify_statement(dana_statement):
         #Subtree: "return" ":" <expr> 
         if first_token == "return":
             return_expression = dana_statement.children[2]
-            return_type = get_expr_typeession(return_expression)
+            return_type = get_expr_type(return_expression)
         #Subtree: "exit"
         else:
             return_type = DanaType("void")
 
-        current_function = stack.top_function()
-        if return_type != current_function[1]:
+        current_function = stack.top_scope().main
+        function_return_type = DanaType(current_function[1].base, current_function[1].dims)
+        if return_type != function_return_type:
+            print("Lines {}: ".format(dana_statement.linespan), end="")
             print("Type mismatch: Function {} returns {}, but return expression is of type {}"
-                        .format(current_function[0], current_function[1], return_type))
+                        .format(current_function[0], function_return_type, return_type))
         
 
     #Subtree: "if" <cond> ":" <block> ("elif" <cond> ":" <block>)* ["else" ":" <block> ]
@@ -173,14 +185,17 @@ def verify_statement(dana_statement):
         if len(dana_statement.children) > 1:
             label_name = dana_statement.children[2].value
             if not scope.in_stack(label_name):
+                print("Lines {}: ".format(dana_statement.linespan), end="")
                 print("Label not found: {}".format(label_name))
             symbol_type = stack.first_type(label_name)
 
             if symbol_type is None:
+                print("Lines {}: ".format(dana_statement.linespan), end="")
                 print("Label named {} not found!".format(label_name))
                 return
 
             if symbol_type != DanaType("label"):
+                print("Lines {}: ".format(dana_statement.linespan), end="")
                 print("Nonlabel id {} used as label".format(label_name))
                     
 
@@ -190,10 +205,10 @@ def verify_statement(dana_statement):
        expr_type = get_expr_type(dana_statement.children[2]) 
 
        if lvalue_type.dims:
-            print("Line {}: ".format(dana_statement.linespan), end="")
+            print("Lines {}: ".format(dana_statement.linespan), end="")
             print("Lvalue has to be nonarray, but is {}".format(lvalue_type))
        elif lvalue_type != expr_type:
-            print("Line {}: ".format(dana_statement.linespan), end="")
+            print("Lines {}: ".format(dana_statement.linespan), end="")
             print("Lvalue is of type {}, but is assigned an expression of type {}".format(lvalue_type, expr_type))
 
 
@@ -203,14 +218,14 @@ def verify_statement(dana_statement):
             
         process_name = first_token.children[0].value
         if not stack.name_in_stack(process_name):
+            print("Lines {}: ".format(dana_statement.linespan), end="")
             print("Process {} not defined".format(process_name))
         definition_type = stack.name_type(process_name) 
         call_type = DanaType("void", ops = get_call_ops(dana_statement))
 
         if definition_type != call_type:
-            print("Problem by process call {}".format(first_token.children[0].value))
-            print("Expected type: {}".format(definition_type))
-            print("Found type: {}".format(call_type))
+            print("Lines {}: ".format(dana_statement.linespan), end="")
+            print("Problem by process call {}, expected type {} but found type {}".format(first_token.children[0].value, definition_type, call_type))
             
 
              
@@ -322,6 +337,7 @@ def produce_scope(dana_function):
             for symbol in symbols:
                 symbol_name = symbol[0]
                 if scope.name_in_scope(symbol_name):
+                    print("Lines {}: ".format(dana_function.linespan), end="")
                     print("Symbol {} already defined in current scope!".format(symbol))
                 
             scope.push_symbols(symbols)    
@@ -333,6 +349,7 @@ def produce_scope(dana_function):
             func_name = func_symbol[0]
 
             if scope.name_in_scope(func_name):
+                print("Lines {}: ".format(dana_function.linespan), end="")
                 print("Symbol {} already defined in current scope!".format(func_symbol))
 
             scope.push_symbol(func_symbol)

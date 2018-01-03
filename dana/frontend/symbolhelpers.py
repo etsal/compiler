@@ -52,7 +52,7 @@ def get_fpar_data_type(dana_fpar_type):
 
     #Subtree: <type>
     elif first_token.name == "p_type":
-        total_type = get_total_data_type(child)
+        total_type = get_total_data_type(first_token)
         
     if total_type is not None:
         return total_type

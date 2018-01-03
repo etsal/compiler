@@ -2,7 +2,7 @@ class DanaType(object):
     base_types = [      \
         "byte", "int",  \
         # Internal datatypes
-        "logic", "void", \
+        "void", \
         "label",
     ]   
  
@@ -34,7 +34,7 @@ class DanaType(object):
         return result 
 
     def __eq__(self, other_type):
-        return self.base == other_type.base and self.dims == other_type.dims and self.ops == other_type.ops
+        return self.base == other_type.base and len(self.dims) == len(other_type.dims) and self.ops == other_type.ops
 
     def __ne__(self, other_type):
         return not self.__eq__(other_type)            
