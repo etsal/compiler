@@ -110,7 +110,7 @@ def get_lvalue_type(dana_lvalue):
         if not stack.name_in_stack(first_token.value):
             print("Symbol {} not defined!".format(name))      
 
-        return copy.deepcopy(stack.name_type(first_token.value)) 
+        return stack.name_type(first_token.value) 
 
     #Subtree: <string>
     elif first_token.name == "p_string":
@@ -127,8 +127,8 @@ def get_lvalue_type(dana_lvalue):
         if not base_type.dims:
             print("Lines {}: ".format(dana_lvalue.linespan), end="")
             print("Nonarray lvalue dereferenced") 
-        base_type.dims= base_type.dims[:-1]
-        return base_type
+
+        return DanaType(base_type.base, dims = base_type.dims[:-1])
          
 
 #Subtree: <id> [":" <expr> ("," <expr>)*] | <id> "(" [<expr> ("," <expr>)*] ")"

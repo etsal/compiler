@@ -1,3 +1,5 @@
+import traceback
+
 class DanaType(object):
     base_types = [      \
         "byte", "int",  \
@@ -16,11 +18,16 @@ class DanaType(object):
         if base in ["logic", "void"] and dims !=  []:
             raise ValueError("Danatype {} cannot have dimensions {}".format(base, dims))
             
+        object.__setattr__(self, "base", base)
+        object.__setattr__(self, "dims", dims)
+        object.__setattr__(self, "ops", ops)
+        object.__setattr__(self, "ref", ref)
 
-        self.base = base
-        self.dims = dims 
-        self.ops = ops
-        self.ref = ref
+
+    def __setattr__(self, name, value):
+        print("WARNING: Modifying a type. Program stack:")
+        for line in traceback.format_stack():
+            print(line.strip())
 
     def __str__(self):
         if self.base is not None:
