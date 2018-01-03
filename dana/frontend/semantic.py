@@ -42,7 +42,7 @@ def get_expr_type(dana_expr):
     elif first_token.name == "p_char":
         return DanaType("byte")
 
-    #Subtree: <l-value>
+    #Subtree: <lvalue>
     elif first_token.name == "p_string":
         return DanaType("byte", [0])
 
@@ -131,13 +131,17 @@ def verify_statement(dana_statement):
     first_token = dana_statement.children[0]
 
 
+    #Subtree: "skip"
     if first_token == "skip":
         pass 
 
+    #Subtree: "exit" | "return" ":" <expr> 
     elif first_token == "return" or first_token == "exit":
+        #Subtree: "return" ":" <expr> 
         if first_token == "return":
             return_expression = dana_statement.children[2]
             return_type = get_expr_typeession(return_expression)
+        #Subtree: "exit"
         else:
             return_type = DanaType("void")
 
@@ -147,10 +151,12 @@ def verify_statement(dana_statement):
                         .format(current_function[0], current_function[1], return_type))
         
 
+    #Subtree: "if" <cond> ":" <block> ("elif" <cond> ":" <block>)* ["else" ":" <block> ]
     elif first_token == "if":
         verify_if_statement(dana_statement)
 
 
+    #Subtree: "loop" [<id>] ":" <block> 
     elif first_token == "loop":
         # If there is a label, store it
         if len(dana_statement.children) == 4:
@@ -160,6 +166,7 @@ def verify_statement(dana_statement):
         verify_block(looped_block)
 
 
+    #Subtree: "break" [":" <id>] | "continue" [":" <id>]
     # These two are handled identically at a semantic level
     elif first_token == "break" or first_token == "continue":
         if len(dana_statement.children) > 1:
@@ -176,15 +183,17 @@ def verify_statement(dana_statement):
                 print("Nonlabel id {} used as label".format(label_name))
                     
 
+    #Subtree: <lvalue> ":=" <expr>
     elif first_token.name == "p_lvalue":
        lvalue_type = get_lvalue_type(dana_statement.children[0]) 
        expr_type = get_expr_type(dana_statement.children[2]) 
 
        if lvalue_type != expr_type:
-            print("{}", first_token.lineno, end="")
+            print("Line {}: ".format(dana_statement.linespan), end="")
             print("Lvalue is of type {}, but is assigned an expression of type {}".format(lvalue_type, expr_type))
 
 
+    #Subtree: <proc-call>
     # Procs are have return type void by design, so no need to check that
     elif first_token.name == "p_proc_call":
             
@@ -201,16 +210,19 @@ def verify_statement(dana_statement):
             
 
              
+#Subtree: "if" <cond> ":" <block> ("elif" <cond> ":" <block>)* ["else" ":" <block> ]
 def verify_if_statement(dana_if_statement):
     unprocessed = deque(dana_if_statement.children)
     while unprocessed:
         child = unprocessed.popleft()
         if isinstance(child, str):
             continue
+        #Subtree: <cond>
         if child.name == "p_cond":
             verify_cond(child)
 
 
+        #Subtree: <block>
         elif child.name == "p_block": 
             verify_block(child)
 
@@ -218,14 +230,17 @@ def verify_if_statement(dana_if_statement):
         else:
             extendleft_no_reverse(unprocessed, child.children)     
 
-
+#Subtree: <id> | <string-literal> | <lvalue> "[" <expr> "]"
 def get_lvalue_type(dana_lvalue):
     first_token = dana_lvalue.children[0]
+    #Subtree: <id>
     if first_token.name == "p_name":
         if not stack.name_in_stack(first_token.value):
             print("Symbol {} not defined!".format(name))
       
         return copy.deepcopy(stack.name_type(first_token.value)) 
+    #WARNING: NEED TO HANDLE <string-literal>
+    #Subtree <lvalue> "[" <expr> "]"
     else:
         
         base_type = get_lvalue_type(first_token) 
@@ -238,6 +253,7 @@ def get_lvalue_type(dana_lvalue):
         return base_type
          
 
+#Subtree: <id> [":" <expr> ("," <expr)*] | <id> "(" [<expr> ("," <expr>)*] ")"
 def get_call_ops(dana_call):
     call_ops = []
     unprocessed = deque(dana_call.children)
@@ -245,6 +261,7 @@ def get_call_ops(dana_call):
         child = unprocessed.popleft()
         if isinstance(child, str):
             continue
+        #Subtree: <expr>
         if child.name == "p_expr":
             call_ops += [get_expr_type(child)]
 
