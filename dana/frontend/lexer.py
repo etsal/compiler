@@ -9,7 +9,7 @@ separators = (
     'COMMA',
     'COLON',
     'ASSIGN',
-    'NEWLINE',
+#    'NEWLINE',
 )
 
 elements = (
@@ -152,7 +152,7 @@ def t_error(t):
     t.lexer.skip(1)
 
 tokens =  separators + elements + operators \
-            + tuple(reserved.values())  + ignored
+            + tuple(reserved.values())  
 
 
 def test():
