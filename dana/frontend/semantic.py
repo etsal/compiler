@@ -89,7 +89,8 @@ def get_expr_type(dana_expr):
         if stack.name_type(function_name).ops != call_ops:
             print("Function {} not called with proper arguments".format(first_token.children[0].value))
         
-        return stack.name_type(function_name)
+        function_type = stack.name_type(function_name)
+        return DanaType(function_type.base, dims = function_type.dims)
 
 
 def verify_cond(dana_cond):
@@ -273,6 +274,8 @@ def get_call_ops(dana_call):
         else:
             extendleft_no_reverse(unprocessed, child.children) 
 
+    if not call_ops:
+        call_ops = [DanaType("void")]
     
     return call_ops
 
