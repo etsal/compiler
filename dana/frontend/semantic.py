@@ -18,11 +18,13 @@ def get_expr_type(dana_expr):
 
     # Subtree: "(" <expr> ")"
     if first_token == "(":
-        return get_expr_type(dana_expr.children[1])
+        expr_token = dana_expr.children[1]
+        return get_expr_type(expr_token)
 
     #Subtree: ("+" | "-") <expr>
     elif first_token in ["+", "-"]:
-        expr_type = get_expr_type(dana_expr.children[1])
+        expr_token = dana_expr.children[1]
+        expr_type = get_expr_type(expr_token)
         if expr_type != DanaType("int"):
             print("Lines {}: ".format(dana_expr.linespan), end="")
             print("Unary sign operator applied to nonint expression")
@@ -30,7 +32,8 @@ def get_expr_type(dana_expr):
 
     #Subtree: "!" <expr>
     elif first_token == "!":
-        expr_type = get_expr_type(dana_expr.children[1])
+        expr_token = dana_expr.children[1]
+        expr_type = get_expr_type(expr_token)
         if expr_type != DanaType("byte"):
             print("Lines {}: ".format(dana_expr.linespan), end="")
             print("Negation operator ! applied to nonbyte expression")
@@ -44,10 +47,6 @@ def get_expr_type(dana_expr):
     elif first_token.name == "p_char":
         return DanaType("byte")
 
-    #Subtree: <lvalue>
-    elif first_token.name == "p_string":
-        return DanaType("byte", [0])
-
     #Subtree: "true" | "false"
     elif first_token.name == "p_boolean":
         return DanaType("byte")
@@ -59,12 +58,13 @@ def get_expr_type(dana_expr):
     #Subtree: <expr> ("+" | "-" | "*" | "/" | "%" ) <expr> | <expr> ("&" | "|") <expr>
     elif first_token.name == "p_expr":
         operation = dana_expr.children[1]
+        op1 = dana_expr.children[0]
+        op2 = dana_expr.children[2]            
 
         #Subtree: <expr> ("+" | "-" | "*" | "/" | "%" ) <expr> 
         if operation in ["+", "-", "STAR", "SLASH", "PERCENT"]:
-            
-            op1_type = get_expr_type(dana_expr.children[0])
-            op2_type = get_expr_type(dana_expr.children[2])
+            op1_type = get_expr_type(op1)
+            op2_type = get_expr_type(op2)
             if op1_type != op2_type:
                 print("Lines {}: ".format(dana_expr.linespan), end="")
                 print("Type mismatch between expressions being compared. Types are {} and {}".format(op1_type, op2_type))
@@ -76,8 +76,8 @@ def get_expr_type(dana_expr):
 
         #Subtree: <expr> ("&" | "|") <expr>
         elif operation in ["&", "|"]:
-            op1_type = get_expr_type(dana_expr.children[0])
-            op2_type = get_expr_type(dana_expr.children[2])
+            op1_type = get_expr_type(op1)
+            op2_type = get_expr_type(op2)
             if op1_type != DanaType("byte") or op1_type != DanaType("byte"):
                 print("Lines {}: ".format(dana_expr.linespan), end="")
                 print("Logical operation between expressions that are not of type byte")
@@ -90,6 +90,7 @@ def get_expr_type(dana_expr):
         if not stack.name_in_stack(function_name):
             print("Lines {}: ".format(dana_expr.linespan), end="")
             print("Process {} not defined".format(function_name))
+
         call_ops = get_call_ops(dana_expr)
 
         if stack.name_type(function_name).ops != call_ops:
@@ -100,22 +101,76 @@ def get_expr_type(dana_expr):
         return DanaType(function_type.base, dims = function_type.dims)
 
 
+#Subtree: <id> | <string> | <lvalue> "[" <expr> "]"
+def get_lvalue_type(dana_lvalue):
+    first_token = dana_lvalue.children[0]
+
+    #Subtree: <id>
+    if first_token.name == "p_name":
+        if not stack.name_in_stack(first_token.value):
+            print("Symbol {} not defined!".format(name))      
+
+        return copy.deepcopy(stack.name_type(first_token.value)) 
+
+    #Subtree: <string>
+    elif first_token.name == "p_string":
+        return DanaType("byte", dims = [len(first_token.value) + 1])
+
+    #Subtree <lvalue> "[" <expr> "]"
+    else: 
+        expr_token = dana_lvalue.children[2]
+        base_type = get_lvalue_type(first_token) 
+        expr_type = get_expr_type(expr_token)
+        if expr_type != DanaType("int"):
+            print("Lines {}: ".format(dana_lvalue.linespan), end="")
+            print("Expression used as index is of type {}".format(expr_type))
+        if not base_type.dims:
+            print("Lines {}: ".format(dana_lvalue.linespan), end="")
+            print("Nonarray lvalue dereferenced") 
+        base_type.dims= base_type.dims[:-1]
+        return base_type
+         
+
+#Subtree: <id> [":" <expr> ("," <expr>)*] | <id> "(" [<expr> ("," <expr>)*] ")"
+def get_call_ops(dana_call):
+    call_ops = []
+    unprocessed = deque(dana_call.children)
+    while unprocessed:
+        child = unprocessed.popleft()
+        if isinstance(child, str):
+            continue
+        #Subtree: <expr>
+        if child.name == "p_expr":
+            call_ops += [get_expr_type(child)]
+
+        else:
+            extendleft_no_reverse(unprocessed, child.children) 
+
+    if not call_ops:
+        call_ops = [DanaType("void")]
+    
+    return call_ops
+
 def verify_cond(dana_cond):
     first_token = dana_cond.children[0]
 
     #Subtree: "(" <cond> ")"
     if first_token == "(":
-        verify_cond(dana_cond.children[1])
+        cond_token = dana_cond.children[1]
+        verify_cond(cond_token)
 
     #Subtree: "not" <cond>
     elif first_token == "not":
-        verify_cond(dana_cond.chilren[1])
+        cond_token = dana_cond.children[1]
+        verify_cond(cond_token)
 
 
     #Subtree: <cond> ("and" | "or") <cond>
     elif first_token == "p_cond":
-        verify_cond(dana_cond.children[0])
-        verify_cond(dana_cond.children[2])
+        op1 = dana_cond.children[0] 
+        op2 = dana_cond.children[2] 
+        verify_cond(op1)
+        verify_cond(op2)
 
     #Subtree: <expr> | <expr> ("=" | "<>" | "<" | ">" | "<=" | ">=") <expr>
     elif first_token.name == "p_expr":
@@ -127,8 +182,10 @@ def verify_cond(dana_cond):
                 print("Expression used as condition has type {}".format(expr_type))
         #Subtree: <expr> ("=" | "<>" | "<" | ">" | "<=" | ">=") <expr>
         else:
-            op1_type = get_expr_type(dana_cond.children[0])
-            op2_type = get_expr_type(dana_cond.children[2])
+            op1 = dana_cond.children[0] 
+            op2 = dana_cond.children[2] 
+            op1_type = get_expr_type(op1)
+            op2_type = get_expr_type(op2)
             if op1_type != op2_type:
                 print("Lines {}: ".format(dana_cond.linespan), end="")
                 print("Type mismatch between expressions being compared. Types are {} and {}".format(op1_type, op2_type))
@@ -136,7 +193,6 @@ def verify_cond(dana_cond):
                 print("Lines {}: ".format(dana_cond.linespan), end="")
                 print("Comparison between expressions of a nonordered type")
                     
-
 
 def verify_statement(dana_statement):
     first_token = dana_statement.children[0]
@@ -150,8 +206,8 @@ def verify_statement(dana_statement):
     elif first_token == "return" or first_token == "exit":
         #Subtree: "return" ":" <expr> 
         if first_token == "return":
-            return_expression = dana_statement.children[2]
-            return_type = get_expr_type(return_expression)
+            expr_token = dana_statement.children[2]
+            return_type = get_expr_type(expr_token)
         #Subtree: "exit"
         else:
             return_type = DanaType("void")
@@ -173,50 +229,54 @@ def verify_statement(dana_statement):
     elif first_token == "loop":
         # If there is a label, store it
         if len(dana_statement.children) == 4:
-            this.stack.push_symbol((dana_statement.children[1].value, DanaType("label")))
+            label_id = dana_statement.children[1].value
+            this.stack.push_symbol(label_id, (DanaType("label")))
 
-        looped_block = dana_statement.children[-1]
-        verify_block(looped_block)
+        block_token = dana_statement.children[-1]
+        verify_block(block_token)
 
 
     #Subtree: "break" [":" <id>] | "continue" [":" <id>]
     # These two are handled identically at a semantic level
     elif first_token == "break" or first_token == "continue":
         if len(dana_statement.children) > 1:
-            label_name = dana_statement.children[2].value
-            if not scope.in_stack(label_name):
+            label_id = dana_statement.children[2].value
+            if not scope.in_stack(label_id):
                 print("Lines {}: ".format(dana_statement.linespan), end="")
-                print("Label not found: {}".format(label_name))
-            symbol_type = stack.first_type(label_name)
+                print("Label not found: {}".format(label_id))
+            symbol_type = stack.first_type(label_id)
 
             if symbol_type is None:
                 print("Lines {}: ".format(dana_statement.linespan), end="")
-                print("Label named {} not found!".format(label_name))
+                print("Label named {} not found!".format(label_id))
                 return
 
             if symbol_type != DanaType("label"):
                 print("Lines {}: ".format(dana_statement.linespan), end="")
-                print("Nonlabel id {} used as label".format(label_name))
+                print("Nonlabel id {} used as label".format(label_id))
                     
 
     #Subtree: <lvalue> ":=" <expr>
     elif first_token.name == "p_lvalue":
-       lvalue_type = get_lvalue_type(dana_statement.children[0]) 
-       expr_type = get_expr_type(dana_statement.children[2]) 
+        lvalue_token = dana_statement.children[0]
+        expr_token = dana_statement.children[2]
 
-       if lvalue_type.dims:
+        lvalue_type = get_lvalue_type(lvalue_token) 
+        expr_type = get_expr_type(expr_token) 
+
+        if lvalue_type.dims:
             print("Lines {}: ".format(dana_statement.linespan), end="")
             print("Lvalue has to be nonarray, but is {}".format(lvalue_type))
-       elif lvalue_type != expr_type:
+        elif lvalue_type != expr_type:
             print("Lines {}: ".format(dana_statement.linespan), end="")
             print("Lvalue is of type {}, but is assigned an expression of type {}".format(lvalue_type, expr_type))
 
 
     #Subtree: <proc-call>
     # Procs are have return type void by design, so no need to check that
-    elif first_token.name == "p_proc_call":
-            
+    elif first_token.name == "p_proc_call": 
         process_name = first_token.children[0].value
+
         if not stack.name_in_stack(process_name):
             print("Lines {}: ".format(dana_statement.linespan), end="")
             print("Process {} not defined".format(process_name))
@@ -225,7 +285,7 @@ def verify_statement(dana_statement):
 
         if definition_type != call_type:
             print("Lines {}: ".format(dana_statement.linespan), end="")
-            print("Problem by process call {}, expected type {} but found type {}".format(first_token.children[0].value, definition_type, call_type))
+            print("Problem by process call {}, expected type {} but found type {}".format(process_name, definition_type, call_type))
             
 
              
@@ -248,51 +308,6 @@ def verify_if_statement(dana_if_statement):
 
         else:
             extendleft_no_reverse(unprocessed, child.children)     
-
-#Subtree: <id> | <string> | <lvalue> "[" <expr> "]"
-def get_lvalue_type(dana_lvalue):
-    first_token = dana_lvalue.children[0]
-    #Subtree: <id>
-    if first_token.name == "p_name":
-        if not stack.name_in_stack(first_token.value):
-            print("Symbol {} not defined!".format(name))
-      
-        return copy.deepcopy(stack.name_type(first_token.value)) 
-    #Subtree: <string>
-    elif first_token.name == "p_string":
-        return DanaType("byte", dims = [len(first_token.value) + 1])
-    #Subtree <lvalue> "[" <expr> "]"
-    else:
-        
-        base_type = get_lvalue_type(first_token) 
-        expr_type = get_expr_type(dana_lvalue.children[2])
-        if expr_type != DanaType("int"):
-            print("Expression used as index is of type {}".format(expr_type))
-        if not base_type.dims:
-            print("Nonarray lvalue dereferenced") 
-        base_type.dims= base_type.dims[:-1]
-        return base_type
-         
-
-#Subtree: <id> [":" <expr> ("," <expr)*] | <id> "(" [<expr> ("," <expr>)*] ")"
-def get_call_ops(dana_call):
-    call_ops = []
-    unprocessed = deque(dana_call.children)
-    while unprocessed:
-        child = unprocessed.popleft()
-        if isinstance(child, str):
-            continue
-        #Subtree: <expr>
-        if child.name == "p_expr":
-            call_ops += [get_expr_type(child)]
-
-        else:
-            extendleft_no_reverse(unprocessed, child.children) 
-
-    if not call_ops:
-        call_ops = [DanaType("void")]
-    
-    return call_ops
 
 
 # Traverse statement block, checking its symbols against the current stack
@@ -344,8 +359,8 @@ def produce_scope(dana_function):
 
         elif child.name == "p_func_decl" or child.name == "p_func_def":                     
             
-            func_header = child.children[1] 
-            func_symbol = get_function_symbol(func_header)                                         
+            header_token = child.children[1] 
+            func_symbol = get_function_symbol(header_token)                                         
             func_name = func_symbol[0]
 
             if scope.name_in_scope(func_name):
