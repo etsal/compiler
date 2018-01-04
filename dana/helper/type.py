@@ -1,5 +1,3 @@
-import traceback
-
 class DanaType(object):
     base_types = [      \
         "byte", "int",  \
@@ -25,9 +23,7 @@ class DanaType(object):
 
 
     def __setattr__(self, name, value):
-        print("WARNING: Modifying a type. Program stack:")
-        for line in traceback.format_stack():
-            print(line.strip())
+            raise ValueError("Changing an immutable object")
 
     def __str__(self):
         if self.base is not None:

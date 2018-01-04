@@ -385,6 +385,8 @@ def produce_scope(dana_function):
             extendleft_no_reverse(unprocessed, child.children)
             
 
+    scope.make_immutable()
+
     return scope
 
 def verify_function(dana_function):
