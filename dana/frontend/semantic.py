@@ -107,10 +107,12 @@ def get_lvalue_type(dana_lvalue):
 
     #Subtree: <id>
     if first_token.name == "p_name":
-        if not stack.name_in_stack(first_token.value):
-            print("Symbol {} not defined!".format(name))      
+        id_name = first_token.value
+        if not stack.name_in_stack(id_name):
+            print("Symbol {} not defined!".format(id_name))      
+            return DanaType("invalid")
 
-        return stack.name_type(first_token.value) 
+        return stack.name_type(id_name) 
 
     #Subtree: <string>
     elif first_token.name == "p_string":

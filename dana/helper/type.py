@@ -1,9 +1,10 @@
 class DanaType(object):
-    base_types = [      \
-        "byte", "int",  \
+    base_types = [      
+        "byte", "int",  
+        "void", 
         # Internal datatypes
-        "void", \
-        "label",
+        "label", 
+        "invalid", 
     ]   
  
     # base is the argument giving the base type
