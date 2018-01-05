@@ -1,12 +1,17 @@
 from collections import deque as deque
+from helper.builtins import builtins as builtins
+from helper.scope import Scope as Scope
 
 class ScopeStack(object):
     def __init__(self, scopes = None):
-        self.deque = deque(scopes) 
+        if scopes:
+            self.scopes = deque(scopes) 
+        else:
+            self.scopes = deque([Scope(symbols = builtins)])
 
 
     def stack(self):
-        return self.deque
+        return self.scopes
 
     def top_scope(self):
         return self.stack()[0]

@@ -20,7 +20,6 @@ class Scope(object):
         
         self.symbols.extend(symbols)
 
-
     def name_in_scope(self, name):
         symbol_names = [x for (x,y) in self.symbols]
         return name in symbol_names      
