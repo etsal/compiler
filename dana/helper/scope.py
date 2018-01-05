@@ -1,10 +1,16 @@
 from collections import deque as deque
+from helper.type import DanaType as DanaType
 
 class Scope(object):
-    def __init__(self, main = None, symbols = [], labels = []):
+    def __init__(self, parent = None, function_symbol = ("", DanaType("invalid")), symbols = [], labels = []):
         object.__setattr__(self, "is_immutable", False)
+        self.parent=  parent
+        self.function_symbol = function_symbol
+        self.name = (parent.name if parent else "")+ "@" + function_symbol[0]
+        self.type = function_symbol[1] 
         self.symbols = deque(symbols)
-        self.main = main
+        self.args = []
+        self.children = []
         self.labels = []
 
 
@@ -39,9 +45,9 @@ class Scope(object):
  
    
     def __str__(self):
-        if self.main is not None:
-            string = "Function name: {}\n".format(self.main[0])
-            string += "Function type: {}\n".format(self.main[1])
+        if self.name is not None:
+            string = "Function name: {}\n".format(self.name[0])
+            string += "Function type: {}\n".format(self.name[1])
         else:
             string = "Function: ????????\n"
         for symbol in self.symbols:

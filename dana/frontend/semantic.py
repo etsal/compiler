@@ -214,7 +214,7 @@ def verify_statement(dana_statement):
         else:
             return_type = DanaType("void")
 
-        current_function = stack.top_scope().main
+        current_function = stack.top_scope().function_symbol
         function_return_type = DanaType(current_function[1].base, current_function[1].dims)
         if return_type != function_return_type:
             print("Lines {}: ".format(dana_statement.linespan), end="")
@@ -334,7 +334,7 @@ def produce_scope(dana_function):
 
     function_header = dana_function.children[1]
     current_function = get_function_symbol(function_header)
-    scope = Scope(current_function)
+    scope = Scope(stack.top_scope(), current_function)
 
     unprocessed = deque(dana_function.children)
     while unprocessed:
@@ -359,6 +359,9 @@ def produce_scope(dana_function):
                 
             scope.push_symbols(symbols)    
 
+            if child.name == "p_fpar_def":
+                scope.args = [x for (x,y) in symbols]
+
         elif child.name == "p_func_decl" or child.name == "p_func_def":                     
             
             header_token = child.children[1] 
@@ -376,7 +379,7 @@ def produce_scope(dana_function):
                 # Temporarily add the current scope, so that the variables are visible 
                 # to the inner function being verified
                 stack.add_scope(scope)
-                verify_function(child)
+                scope.children.append(verify_function(child))
                 stack.pop_scope()
 
         # Once we reach the block, we cannot find any more definitions
@@ -395,7 +398,7 @@ def verify_function(dana_function):
     stack.add_scope(produce_scope(dana_function))
     function_block = dana_function.children[-1]
     verify_block(function_block)
-    stack.pop_scope()
+    return stack.pop_scope()
 
 
 
