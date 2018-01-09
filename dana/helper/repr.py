@@ -8,6 +8,12 @@ class Symbol(object):
     def __str__(self):
        return "({},{})".format(self.name, self.type) 
 
+    def __eq__(self, other):
+        return self.name == other.name and self.type == other.type
+
+    def __ne__(self, other):
+        return not __eq__(self, other)
+
 class DanaFunction(object):
     def __init__(self, parent, symbol, defs, args, block):
         self.parent = parent 
@@ -19,10 +25,11 @@ class DanaFunction(object):
         self.children = []
 
     def __str__(self):
-        ret = "{}\n".format(str(self.symbol)) 
+        ret = "-------{}-------\n".format(str(self.symbol)) 
         ret += "Args: {}\n".format([str(arg) for arg in self.args])
         ret += "Defs: {}\n".format([str(dana_def) for dana_def in self.defs])
         ret += "Parent: {}\n".format(str(self.parent.symbol) if self.parent else "")
+        ret += "Children: {}\n".format(str([str(child.symbol) for child in self.children]))
         return ret
 
 class DanaBlock(object):

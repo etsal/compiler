@@ -12,7 +12,7 @@ class DanaType(object):
     # From it, we can construct new types by either
     # turning it into a reference, or by turning it
     # into an array of set size
-    def __init__(self, base, dims = [], args = [], ref = False):
+    def __init__(self, base, dims = [], args = None, ref = False):
         if base not in self.base_types:
             raise ValueError("Base type {} invalid".format(base)) 
         if base in ["logic", "void"] and dims !=  []:
@@ -31,7 +31,7 @@ class DanaType(object):
         result = self.base
         for dim in self.dims:
             result += "[{}]".format(dim) if dim > 0 else "[]" 
-        if self.args:
+        if self.args is not None:
             result += "({})".format(", ".join(map(str, self.args))) 
         return result 
 

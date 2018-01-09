@@ -1,6 +1,7 @@
 from collections import deque as deque
 from helper.type import *
 from helper.repr import * 
+from copy import copy
 import sys
 
 from frontend.lexer import lex as lex, tokens as tokens
@@ -25,11 +26,13 @@ def get_type(dana_type):
 def get_function_symbol(dana_header):        
     name = dana_header.find_first("p_name").value
 
-    base = dana_header.find_first_child("p_data_type")
+    base = dana_header.find_first("p_maybe_data_type").find_first("p_data_type")
+    if base:
+        base = base.value
     if not base:
         base = "void"
         
-    args = map(get_type, dana_header.find_all("p_fpar_def"))     
+    args = list(map(get_type, dana_header.find_all("p_fpar_def")))
 
     return Symbol(name, DanaType(base, args = args))
 
@@ -44,38 +47,69 @@ def get_variable_symbols(dana_def):
     return [Symbol(var, var_type) for var in variables]
  
 
-def produce_function(dana_function, parent = None):
+def produce_function(dana_function, parent = None, global_table = dict()):
     
     dana_header = dana_function.find_first("p_header")
+    function = get_function_symbol(dana_header)
     dana_args = dana_header.find_all("p_fpar_def") 
 
-    function = get_function_symbol(dana_header)
-
     dana_local_def_list = dana_function.find_first_child("p_local_def_list")
-    dana_local_defs = dana_local_def_list.multifind(["p_func_def", "p_func_decl", "p_var_def"])
+    dana_local_defs = []
+    if dana_local_def_list:
+        dana_local_defs = dana_function.find_first("p_local_def_list").multifind(["p_func_def", "p_func_decl", "p_var_def"])
+
+    local_table = dict()
+
     dana_block = dana_function.find_first("p_block")
-
-    dana_defs = [local_def for local_def in dana_local_defs if local_def.name == "p_var_def"]
-    dana_funcs = [local_def for local_def in dana_local_defs if local_def.name != "p_var_def"]
-
-    defs = []
-    for dana_def in dana_defs:
-        names = map(lambda name: name.value, dana_def.find_all("p_name"))
-        dana_type = get_type(dana_def)
-        defs += [Symbol(name, dana_type) for name in names]   
-
-    args = []
-    for dana_arg in dana_args:
-        names = map(lambda name: name.value, dana_arg.find_all("p_name"))
-        dana_type = get_type(dana_arg)
-        args += [Symbol(name, dana_type) for name in names]   
-
-    
-    funcs = [get_function_symbol(function) for function in dana_funcs]
-    
     block = DanaBlock(dana_block) 
 
-    return DanaFunction(parent, function, defs, args, block)
+
+    args = []
+    defs = []
+    decls = []
+    funcs = []
+    
+    function = DanaFunction(parent, function, defs, args, block)
+
+    for local_def in dana_args + dana_local_defs:
+        symbols = None
+        if local_def.name in ["p_func_decl", "p_func_def"]:
+            symbols = [get_function_symbol(local_def.find_first("p_header"))] 
+            if local_def.name == "p_func_decl":
+                decls += symbols
+
+            elif local_def.name == "p_func_def":
+                funcs += symbols
+                
+                temp_table = copy(global_table)
+                for key in local_table.keys():
+                    temp_table[key] = local_table[key]
+
+                function.children.append(produce_function(local_def, function, temp_table))
+                print(produce_function(local_def, function, temp_table))
+
+        elif local_def.name in ["p_var_def", "p_fpar_def"]:
+            names = map(lambda name: name.value, local_def.find_all("p_name"))
+            symbols = [Symbol(name, get_type(local_def)) for name in names]   
+
+            if local_def.name == "p_var_def":
+                defs += symbols
+
+            elif local_def.name == "p_fpar_def":
+                args += symbols
+
+
+        else:
+            raise ValueError("Local definition is not declaration or definition")
+        
+        for symbol in symbols:
+            if (symbol.name in local_table) and not (len([x for x in funcs if x.name == symbol.name]) == 1 and symbol.name in [decl.name for decl in decls]):
+                print("Lines {}: Name {} already defined in current scope".format(dana_function.linespan, symbol.name))
+
+            local_table[symbol.name] = symbol.type 
+         
+
+    return function
 
     
     
