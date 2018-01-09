@@ -1,4 +1,4 @@
-from helper.node import Node * 
+from helper.node import * 
 
 class Symbol(object):
     def __init__(self, name, dana_type):
