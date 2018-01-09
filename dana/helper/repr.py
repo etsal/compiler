@@ -36,32 +36,45 @@ class DanaBlock(object):
     def __init__(self, dana_block):
         self.stmts = dana_block.find_all("p_stmt")
         self.children = []
+        basic_block = []
         for stmt in self.stmts:
-            basic_block = []
             if not stmt.multifind(["p_loop_stmt", "p_if_stmt"]):
                 basic_block.append(stmt)
-
             else:
-                if basic_block:
+                if basic_block: 
                     self.children.append(DanaBasicBlock(basic_block))
+                    basic_block = []
                 if stmt.find_first_child("p_loop_stmt"):
                     self.children.append(DanaLoopBlock(stmt))
                 elif stmt.find_first_child("p_if_stmt"):
                     self.children.append(DanaIfBlock(stmt))
-                
+        if basic_block: 
+            self.children.append(DanaBasicBlock(basic_block))
+            basic_block = []
+        self.stmts = None
+        self.label = None
+        self.conds = None
 
-class DanaBasicBlock(DanaBlock):
+class DanaBasicBlock(object):
     def __init__(self, stmts):
         self.stmts = stmts
+        self.children = None
+        self.label = None
+        self.conds = None
 
-class DanaIfBlock(DanaBlock):
+class DanaIfBlock(object):
     def __init__(self, dana_block):
         components = dana_block.multifind(["p_cond", "p_block"])
         self.conds = [comp for comp in components if comp.name == "p_cond"]
-        self.blocks = [DanaBlock(comp) for comp in components if comp.name == "p_block"]
+        self.children = [DanaBlock(comp) for comp in components if comp.name == "p_block"]
+        self.label = None
+        self.conds = None
+        self.stmts = None
         
 
-class DanaLoopBlock(DanaBlock):
+class DanaLoopBlock(object):
     def __init__(self, dana_block):
         self.label = dana_block.find_first_child("p_name")
-        self.blocks = [DanaBlock(dana_block.find_first("p_block"))]
+        self.children= [DanaBlock(dana_block.find_first("p_block"))]
+        self.stmts = None
+        self.conds = None

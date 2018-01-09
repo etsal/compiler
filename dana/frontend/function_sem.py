@@ -3,6 +3,7 @@ from helper.type import *
 from helper.repr import * 
 from copy import copy
 import sys
+from frontend.block_sem import verify_block as verify_block
 
 from frontend.lexer import lex as lex, tokens as tokens
 from frontend.parser import parser as parser
@@ -58,7 +59,7 @@ def produce_function(dana_function, parent = None, global_table = dict()):
     if dana_local_def_list:
         dana_local_defs = dana_function.find_first("p_local_def_list").multifind(["p_func_def", "p_func_decl", "p_var_def"])
 
-    local_table = dict()
+    local_table = dict({"$" : function.type})
 
     dana_block = dana_function.find_first("p_block")
     block = DanaBlock(dana_block) 
@@ -86,7 +87,7 @@ def produce_function(dana_function, parent = None, global_table = dict()):
                     temp_table[key] = local_table[key]
 
                 function.children.append(produce_function(local_def, function, temp_table))
-                print(produce_function(local_def, function, temp_table))
+                #print(produce_function(local_def, function, temp_table))
 
         elif local_def.name in ["p_var_def", "p_fpar_def"]:
             names = map(lambda name: name.value, local_def.find_all("p_name"))
@@ -109,6 +110,8 @@ def produce_function(dana_function, parent = None, global_table = dict()):
             local_table[symbol.name] = symbol.type 
          
 
+    verify_block(function.block, local_table)
+
     return function
 
     
@@ -127,7 +130,7 @@ def test():
     main_function = ast.children[0]
     function = produce_function(main_function)        
         
-    print(function)
+    #print(function)
 
     return
 
