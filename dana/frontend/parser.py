@@ -2,7 +2,7 @@ import sys
 from functools import wraps
 from ply.yacc import yacc as yacc
 from frontend.lexer import lex as lex, tokens as tokens
-from helper.tree import Node as Node  
+from helper.node import Node as Node  
 
 precedence = (
     ('left', 'PLUS', 'MINUS', 'VERTICAL'),
@@ -164,18 +164,55 @@ def p_stmt(p):
         stmt : SKIP
              | lvalue ASSIGN expr
              | proc_call
-             | EXIT
-             | RETURN COLON expr
-             | IF cond COLON block 
-             | IF cond COLON block ELSE COLON block 
-             | IF cond COLON block elif_chain 
-             | IF cond COLON block elif_chain ELSE COLON block 
-             | LOOP COLON block
-             | LOOP name COLON block
-             | BREAK
-             | BREAK COLON name
-             | CONTINUE
-             | CONTINUE COLON name
+             | loop_stmt
+             | cont_stmt
+             | break_stmt
+             | ret_stmt
+             | if_stmt
+    '''
+
+
+#Helper token
+@ast_node()
+def p_loop_stmt(p):
+    '''
+        loop_stmt   : LOOP COLON block
+                    | LOOP name COLON block
+    ''' 
+
+#Helper token
+@ast_node()
+def p_cont_stmt(p):
+    '''
+        cont_stmt   : CONTINUE
+                    | CONTINUE COLON name
+    '''
+
+#Helper token
+@ast_node()
+def p_break_stmt(p):
+    '''
+        break_stmt  : BREAK
+                    | BREAK COLON name
+    '''
+
+#Helper token
+@ast_node()
+def p_ret_stmt(p):
+    '''
+        ret_stmt    : EXIT
+                    | RETURN COLON expr
+
+    '''
+
+#Helper token
+@ast_node()
+def p_if_stmt(p):
+    '''
+        if_stmt : IF cond COLON block 
+                | IF cond COLON block ELSE COLON block 
+                | IF cond COLON block elif_chain 
+                | IF cond COLON block elif_chain ELSE COLON block 
     '''
 
 # Helper token
