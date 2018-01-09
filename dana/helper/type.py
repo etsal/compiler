@@ -3,6 +3,7 @@ class DanaType(object):
         "byte", "int",  
         "void", 
         # Internal datatypes
+        "logic",
         "label", 
         "invalid", 
     ]   
@@ -11,7 +12,7 @@ class DanaType(object):
     # From it, we can construct new types by either
     # turning it into a reference, or by turning it
     # into an array of set size
-    def __init__(self, base, dims = [], ops = [], ref = False):
+    def __init__(self, base, dims = [], args = [], ref = False):
         if base not in self.base_types:
             raise ValueError("Base type {} invalid".format(base)) 
         if base in ["logic", "void"] and dims !=  []:
@@ -19,7 +20,7 @@ class DanaType(object):
             
         object.__setattr__(self, "base", base)
         object.__setattr__(self, "dims", dims)
-        object.__setattr__(self, "ops", ops)
+        object.__setattr__(self, "args", args)
         object.__setattr__(self, "ref", ref)
 
 
@@ -27,19 +28,16 @@ class DanaType(object):
             raise ValueError("Changing an immutable object")
 
     def __str__(self):
-        if self.base is not None:
-            result = self.base
-        else:
-            result = "???"
+        result = self.base
         for dim in self.dims:
             result += "[{}]".format(dim) if dim > 0 else "[]" 
-        for operand in self.ops:
-            result += " (Arg: {})".format(operand) 
+        if self.args:
+            result += "({})".format(", ".join(map(str, self.args))) 
         return result 
 
-    def __eq__(self, other_type):
-        return self.base == other_type.base and len(self.dims) == len(other_type.dims) and self.ops == other_type.ops
+    def __eq__(self, other):
+        return self.base == other.base and len(self.dims) == len(other.dims) and self.args == other.args
 
-    def __ne__(self, other_type):
-        return not self.__eq__(other_type)            
+    def __ne__(self, other):
+        return not self.__eq__(other)            
     
