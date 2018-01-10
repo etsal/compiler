@@ -62,8 +62,10 @@ class Node(object):
     
         return subtrees
 
+    def multifind_children(self, names):
+        return self.multifind(names, only_children = True)
 
-    def multifind(self, names): 
+    def multifind(self, names, only_children = False): 
         subtrees = [] 
         unprocessed = deque(self.children)
         while unprocessed:
@@ -75,7 +77,8 @@ class Node(object):
             elif child.name in names:                
                 subtrees.append(child)
      
-            else:
+            elif not only_children:
                extendleft_no_reverse(unprocessed, child.children)
     
         return subtrees
+

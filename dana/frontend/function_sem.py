@@ -4,6 +4,7 @@ from helper.repr import *
 from copy import copy
 import sys
 from frontend.block_sem import verify_block as verify_block
+from helper.builtins import *
 
 from frontend.lexer import lex as lex, tokens as tokens
 from frontend.parser import parser as parser
@@ -59,9 +60,10 @@ def produce_function(dana_function, parent = None, global_table = dict()):
     if dana_local_def_list:
         dana_local_defs = dana_function.find_first("p_local_def_list").multifind(["p_func_def", "p_func_decl", "p_var_def"])
 
-    local_table = dict({"$" : function.type})
+    local_table = copy(global_table)
+    local_table["$"] = function.type
 
-    dana_block = dana_function.find_first("p_block")
+    dana_block = dana_function.find_first_child("p_block")
     block = DanaBlock(dana_block) 
 
 
@@ -70,7 +72,9 @@ def produce_function(dana_function, parent = None, global_table = dict()):
     decls = []
     funcs = []
     
-    function = DanaFunction(parent, function, defs, args, block)
+    function = DanaFunction(parent, function, defs, args, block) 
+    local_table[function.symbol.name] = function.symbol.type
+    #print(str(function))
 
     for local_def in dana_args + dana_local_defs:
         symbols = None
@@ -109,7 +113,10 @@ def produce_function(dana_function, parent = None, global_table = dict()):
 
             local_table[symbol.name] = symbol.type 
          
-
+    #for key in local_table.keys():
+    #    print("({}, {})".format(key, str(local_table[key])), end="")
+    #print("")
+    #print(function.symbol.name)
     verify_block(function.block, local_table)
 
     return function
@@ -128,7 +135,11 @@ def test():
     ast = yacc.parse(program.read(),tracking=True,debug=False)
 
     main_function = ast.children[0]
-    function = produce_function(main_function)        
+    global_table = dict()
+    for symbol in builtins:
+        global_table[symbol.name] = symbol.type 
+    
+    function = produce_function(main_function, global_table = global_table)        
         
     #print(function)
 
