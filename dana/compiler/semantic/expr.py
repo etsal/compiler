@@ -99,18 +99,18 @@ class DanaExpr(object):
 
     
     def _make_binary(self, operator, expr1, expr2, symbol_table): 
-        op1 = DanaExpr(op1, symbol_table) 
-        op2 = DanaExpr(op2, symbol_table) 
+        op1 = DanaExpr(expr1, symbol_table) 
+        op2 = DanaExpr(expr2, symbol_table) 
         if op1.type != op2.type:
-            print("Lines {},{}: Operands {} and {}", expr1.linespan, expr2.linespan, str(op1.type), str(op2.type)) 
+            print("Lines {},{}: Operands {} and {}".format(expr1.linespan, expr2.linespan, str(op1.type), str(op2.type))) 
             return
 
 
-        if operation in ["+", "-", "STAR", "SLASH", "PERCENT"] and not op1.type in [DanaType("int"), DanaType("byte")]:
+        if operator in ["+", "-", "STAR", "SLASH", "PERCENT"] and not op1.type in [DanaType("int"), DanaType("byte")]:
             print("Lines {},{}: Operands {} for arithmetic operation", expr1.linespan, expr2.linespan, str(self.type)) 
             return
 
-        if operation in ["&", "|"] and op1.type != DanaType("byte"):
+        if operator in ["&", "|"] and op1.type != DanaType("byte"):
             print("Lines {},{}: Operands {} for byte operation", expr1.linespan, expr2.linespan, str(self.type)) 
             return
  
@@ -155,7 +155,7 @@ class DanaExpr(object):
             child_lvalue = lvalue.find_first_child("p_lvalue")
             child = DanaExpr(child_lvalue, symbol_table)
             if not child_type.dims:
-                print("Lines {}: Base type {} dereferenced".format(dana_lvalue.linespan, child.type))
+                print("Lines {}: Base type {} dereferenced".format(child_lvalue.linespan, child.type))
                 return
             
             self.children = [child]

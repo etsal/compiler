@@ -3,14 +3,14 @@ from copy import copy
 from collections import deque as deque
 from compiler.parser.lexer import lex as lex, tokens as tokens
 from compiler.parser.parser import parser as parser
+from compiler.semantic.symbol import Symbol as Symbol 
 from compiler.semantic.type import DanaType as DanaType 
-from compiler.semantic.repr import * 
+from compiler.semantic.expr import DanaExpr as DanaExpr 
 
 
 #TODO: Baumify
 def verify_cond(dana_cond, symbol_table): 
     conds = dana_cond.find_all("p_cond")
-    
     if conds:
         for cond in conds:
             verify_cond(cond, symbol_table)
@@ -19,7 +19,7 @@ def verify_cond(dana_cond, symbol_table):
     exprs = dana_cond.find_all("p_expr")
     types = [DanaExpr(expr, symbol_table).type for expr in exprs]
     if any(types[0] != t for t in types):
-        print("Lines {}: Type mismatch in expression: {} not defined in current scope".format(dana_cond.linespan, list(str(t) for t in types)))
+        print("Lines {}: Invalid types {} in condition".format(dana_cond.linespan, list(str(t) for t in types)))
          
     if types[0] not in [DanaType("int"), DanaType("byte")]:
         print("Lines {}: Unordered type {} used in comparison".format(dana_cond.linespan, str(types[0])))
@@ -40,6 +40,7 @@ def verify_call_stmt(stmt, symbol_table):
     proc_name = stmt.find_first("p_name").value
     if proc_name not in symbol_table:
         print("Lines {}: Symbol {} not in scope".format(stmt.linespan, proc_name))
+        return 
         
     types = []
     exprs = stmt.find_all("p_expr")

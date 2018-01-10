@@ -1,6 +1,4 @@
-from compiler.semantic.type import DanaType as DanaType
-from compiler.semantic.symbol import Symbol as Symbol
-from compiler.semantic.expr import DanaExpr as DanaExpr
+from copy import copy
 
 class DanaFunction(object):
     def __init__(self, parent, symbol, defs, args, block):
@@ -21,50 +19,80 @@ class DanaFunction(object):
         return ret
 
 class DanaBlock(object):
-    def __init__(self, dana_block):
-        self.stmts = dana_block.find_all("p_stmt")
-        self.children = []
+    def __init__(self, dana_block = None, stmts = None, children = [], label = None, conds = None):
+        self.stmts = [stmt for stmt in stmts] if stmts else None
+        self.children = [child for child in children] if children else []
+        self.label = label 
+        self.conds = conds 
+
+        if not dana_block:
+            return
+
+        dana_stmts = dana_block.find_all("p_stmt")
         basic_block = []
-        for stmt in self.stmts:
-            if not stmt.multifind(["p_loop_stmt", "p_if_stmt"]):
+        for stmt in dana_stmts:
+            if not stmt.multifind_children(["p_loop_stmt", "p_if_stmt"]):
                 basic_block.append(stmt)
             else:
                 if basic_block: 
-                    self.children.append(DanaBasicBlock(basic_block))
+                    
+                    child_stmts = [stmt for stmt in basic_block]
+                    self.children += [DanaBlock(stmts = child_stmts)]
                     basic_block = []
+                    
                 if stmt.find_first_child("p_loop_stmt"):
-                    self.children.append(DanaLoopBlock(stmt))
+
+                    loop_label = None
+                    dana_label = stmt.find_first_child("p_name")
+                    if loop_label:
+                       loop_label = dana_label.value 
+                    loop_block = stmt.find_first("p_block")
+                    self.children += [DanaBlock(dana_block = loop_block, label = loop_label)]
                 elif stmt.find_first_child("p_if_stmt"):
-                    self.children.append(DanaIfBlock(stmt))
+
+                    components = stmt.multifind(["p_cond", "p_block"])
+                    if_conds = [comp for comp in components if comp.name == "p_cond"]
+                    if_children = [DanaBlock(dana_block = comp) for comp in components if comp.name == "p_block"]
+                    self.children += [DanaBlock(children = if_children, conds = if_conds)]
+
         if basic_block: 
-            self.children.append(DanaBasicBlock(basic_block))
+            child_stmts = [stmt for stmt in basic_block]
+            self.children += [DanaBlock(stmts = child_stmts)]
             basic_block = []
-        self.stmts = None
-        self.label = None
-        self.conds = None
 
-class DanaBasicBlock(object):
-    def __init__(self, stmts):
-        self.stmts = stmts
-        self.children = None
-        self.label = None
-        self.conds = None
 
-class DanaIfBlock(object):
-    def __init__(self, dana_block):
-        components = dana_block.multifind(["p_cond", "p_block"])
-        self.conds = [comp for comp in components if comp.name == "p_cond"]
-        self.children = [DanaBlock(comp) for comp in components if comp.name == "p_block"]
-        self.label = None
-        self.conds = None
-        self.stmts = None
+ 
+    def __eq__(self, other):
+        return self.label == other.label and self.conds == other.conds and self.children == other.children and self.stmts == other.stmts
+
+
+    def __ne__(self,other):
+        return not __eq__(self, other)
+
+
+    def __str__(self):
+
+
+        ret = "\n======BEGIN=FUN======\n"
+        if self.label:
+            ret += "Label: {}".format(self.label)
+
+        if self.conds:
+            ret += "\n-------Conds-------\n"
+            for cond in self.conds:
+                ret += str(cond)
+
+        if self.stmts:
+            ret += "\n-------Stmts-------\n"
+            for stmt in self.stmts:
+                ret += str(stmt)
+
+        if self.children:
+            ret += "\n-------Children-------\n"
+            for child in self.children:
+                ret += str(child)
         
+        ret += "\n======END===FUN======\n"
+    
 
-class DanaLoopBlock(object):
-    def __init__(self, dana_block):
-        self.label = dana_block.find_first_child("p_name")
-        self.children= [DanaBlock(dana_block.find_first("p_block"))]
-        self.stmts = None
-        self.conds = None
-
-
+        return ret

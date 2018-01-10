@@ -1,12 +1,12 @@
 import sys
 from copy import copy
 from collections import deque as deque
-from compiler.semantic.type import *
-from compiler.semantic.repr import * 
-from compiler.semantic.block_sem import verify_block as verify_block
-
 from compiler.parser.lexer import lex as lex, tokens as tokens
 from compiler.parser.parser import parser as parser
+from compiler.semantic.type import DanaType as DanaType 
+from compiler.semantic.repr import * 
+from compiler.semantic.symbol import Symbol as Symbol 
+from compiler.semantic.block_sem import verify_block as verify_block
 
 builtins = [
     Symbol("writeInteger", DanaType("void", args = [DanaType("int")])), 
@@ -81,18 +81,18 @@ def produce_function(dana_function, parent = None, global_table = dict()):
     local_table = copy(global_table)
     local_table["$"] = function.type
 
-    dana_block = dana_function.find_first_child("p_block")
-    block = DanaBlock(dana_block) 
 
 
     args = []
     defs = []
     decls = []
     funcs = []
+
+    dana_block = dana_function.find_first_child("p_block")
+    block = DanaBlock(dana_block = dana_block) 
     
     function = DanaFunction(parent, function, defs, args, block) 
     local_table[function.symbol.name] = function.symbol.type
-    #print(str(function))
 
     for local_def in dana_args + dana_local_defs:
         symbols = None
@@ -135,6 +135,7 @@ def produce_function(dana_function, parent = None, global_table = dict()):
     #    print("({}, {})".format(key, str(local_table[key])), end="")
     #print("")
     #print(function.symbol.name)
+    #print(str(function.block))
     verify_block(function.block, local_table)
 
     return function
