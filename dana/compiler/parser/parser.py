@@ -1,8 +1,8 @@
-import sys
 from functools import wraps
 from ply.yacc import yacc as yacc
-from compiler.lexer import lex as lex, tokens as tokens
-from helper.node import Node as Node  
+from compiler.parser.lexer import lex as lex, tokens as tokens
+from compiler.parser.node import Node as Node  
+import sys
 
 precedence = (
     ('left', 'PLUS', 'MINUS', 'VERTICAL'),

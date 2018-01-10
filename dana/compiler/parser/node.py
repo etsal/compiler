@@ -1,5 +1,13 @@
 from collections import deque as deque
-from helper.extendleft import extendleft_no_reverse as extendleft_no_reverse
+from copy import copy as copy
+
+# Simple method for doing a preorder traversal 
+# of the AST using a deque
+def extendleft_no_reverse(main_deque, new_elems):
+    new_elems_copy = new_elems.__copy__()
+    new_elems_copy.reverse()
+    main_deque.extendleft(new_elems_copy) 
+
 
 class Node(object):
  
@@ -24,6 +32,7 @@ class Node(object):
                 and all([child == otherchild for (child, otherchild) in zip(self.children, other.children)]) 
 
 
+
     def find_first_child(self, name):
         return self.find_first(name, only_children = True)
 
@@ -40,6 +49,7 @@ class Node(object):
      
             elif not only_children:
                extendleft_no_reverse(unprocessed, child.children)
+
     
 
     def find_all_children(self, name):
@@ -61,6 +71,8 @@ class Node(object):
                extendleft_no_reverse(unprocessed, child.children)
     
         return subtrees
+
+
 
     def multifind_children(self, names):
         return self.multifind(names, only_children = True)

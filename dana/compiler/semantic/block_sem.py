@@ -1,15 +1,13 @@
 import sys
 from copy import copy
 from collections import deque as deque
-from compiler.lexer import lex as lex, tokens as tokens
-from compiler.parser import parser as parser
-from helper.node import Node as Node  
-from helper.type import DanaType as DanaType 
-from helper.repr import * 
-from helper.extendleft import extendleft_no_reverse as extendleft_no_reverse
-from helper.builtins import builtins as builtins
+from compiler.parser.lexer import lex as lex, tokens as tokens
+from compiler.parser.parser import parser as parser
+from compiler.semantic.type import DanaType as DanaType 
+from compiler.semantic.repr import * 
 
 
+#TODO: Baumify
 def verify_cond(dana_cond, symbol_table): 
     conds = dana_cond.find_all("p_cond")
     
@@ -39,14 +37,12 @@ def verify_labeled_stmt(stmt, symbol_table):
     
 
 def verify_call_stmt(stmt, symbol_table):
-    # Get args, get symbol, compare 
     proc_name = stmt.find_first("p_name").value
-
     if proc_name not in symbol_table:
         print("Lines {}: Symbol {} not in scope".format(stmt.linespan, proc_name))
         
-    exprs = stmt.find_all("p_expr")
     types = []
+    exprs = stmt.find_all("p_expr")
     for expr in exprs:
          types.append(DanaExpr(expr, symbol_table).type)
 
@@ -56,13 +52,14 @@ def verify_call_stmt(stmt, symbol_table):
         print("Lines {}: Proc has type {} but called as {}".format(stmt.linespan, str(expected_type), str(actual_type)))
         
 
-def verify_ret_stmt(stmt, symbol_table):
+def verify_ret_stmt(stmt, symbol_table):    
     expected_type = DanaType(symbol_table["$"].base)
-    expr = stmt.find_first("p_expr")
-    
     actual_type = DanaType("void")
+
+    expr = stmt.find_first("p_expr")
     if expr:
         actual_type = DanaExpr(expr, symbol_table).type
+
     if expected_type != actual_type:
         print("Lines {}: Function has type {} but returns {}".format(stmt.linespan, expected_type, actual_type))
     
