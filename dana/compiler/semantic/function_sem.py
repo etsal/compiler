@@ -141,7 +141,12 @@ def produce_function(dana_function, parent = None, global_table = dict()):
     return function
 
     
+def produce_program(main_function):
+    global_table = dict()
+    for symbol in builtins:
+        global_table[symbol.name] = symbol.type 
     
+    return produce_function(main_function, global_table = global_table)
 
 def test():
     try:
@@ -154,11 +159,8 @@ def test():
     ast = yacc.parse(program.read(),tracking=True,debug=False)
 
     main_function = ast.children[0]
-    global_table = dict()
-    for symbol in builtins:
-        global_table[symbol.name] = symbol.type 
     
-    function = produce_function(main_function, global_table = global_table)        
+    function = produce_program(main_function)
         
     #print(function)
 

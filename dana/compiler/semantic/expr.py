@@ -5,7 +5,7 @@ class DanaExpr(object):
 
     operators = ["const", "id", 
                  "lvalue", "call", 
-                 "neg", "not", "!"
+                 "neg", "!",
                  "+", "-", "*", "/", "%",
                  "&", "|"]
 
