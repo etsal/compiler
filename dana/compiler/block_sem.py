@@ -1,8 +1,8 @@
 import sys
 from copy import copy
 from collections import deque as deque
-from frontend.lexer import lex as lex, tokens as tokens
-from frontend.parser import parser as parser
+from compiler.lexer import lex as lex, tokens as tokens
+from compiler.parser import parser as parser
 from helper.node import Node as Node  
 from helper.type import DanaType as DanaType 
 from helper.repr import * 

@@ -1,7 +1,7 @@
 import sys
 from functools import wraps
 from ply.yacc import yacc as yacc
-from frontend.lexer import lex as lex, tokens as tokens
+from compiler.lexer import lex as lex, tokens as tokens
 from helper.node import Node as Node  
 
 precedence = (

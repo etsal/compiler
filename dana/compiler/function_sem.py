@@ -3,11 +3,11 @@ from helper.type import *
 from helper.repr import * 
 from copy import copy
 import sys
-from frontend.block_sem import verify_block as verify_block
+from compiler.block_sem import verify_block as verify_block
 from helper.builtins import *
 
-from frontend.lexer import lex as lex, tokens as tokens
-from frontend.parser import parser as parser
+from compiler.lexer import lex as lex, tokens as tokens
+from compiler.parser import parser as parser
 
 #Subtrees: <fpar-type> | <type> | <data-type>
 #Subtree: <type> | "ref" <data-type> | <data-type> "[" "]" ("[" <int-const> "]")* 
