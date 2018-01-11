@@ -23,7 +23,7 @@ class DanaBlock(object):
         self.stmts = [stmt for stmt in stmts] if stmts else None
         self.children = [child for child in children] if children else []
         self.label = label 
-        self.conds = conds 
+        self.conds = [cond for cond in conds] if conds else None
 
         if not dana_block:
             return

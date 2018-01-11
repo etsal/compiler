@@ -7,7 +7,10 @@ class DanaExpr(object):
                  "lvalue", "call", 
                  "neg", "!",
                  "+", "-", "*", "/", "%",
-                 "&", "|"]
+                 "&", "|", 
+                 "and", "or", "not",
+                 "=", "!=", "<", "<=", ">=", ">",
+                ]
 
     def __init__(self, dana_expr, symbol_table):
         self.type = DanaType("invalid") 
@@ -15,6 +18,10 @@ class DanaExpr(object):
         self.operator = None
         self.children = []
          
+        #Hacky
+        if dana_expr.name == "p_cond":
+            dana_expr = dana_expr.children[0]
+
         const = dana_expr.multifind_children(["p_number", "p_char", "p_boolean"])
         if const:
             self._make_const_expr(const[0])
@@ -33,14 +40,17 @@ class DanaExpr(object):
             self._make_lvalue(dana_lvalue, symbol_table)
             return
 
-        exprs = dana_expr.find_all("p_expr")
-        if len(exprs) == 1:
-            self._make_unary(dana_expr.children[0], exprs[0], symbol_table) 
+        args = dana_expr.multifind(["p_expr", "p_cond"])
+        if len(args) == 1:
+            self._make_unary(dana_expr.children[0], args[0], symbol_table) 
             return
 
-        elif len(exprs) == 2:
-            self._make_binary(dana_expr.children[1], exprs[0], exprs[1], symbol_table)
+        elif len(args) == 2:
+            self._make_binary(dana_expr.children[1], args[0], args[1], symbol_table)
             return
+    
+        else:
+            print("ERROR: INVALID EXPRESSION")
 
         print("ERROR: INVALID EXPRESSION")
             
@@ -49,7 +59,10 @@ class DanaExpr(object):
         
     def _make_const_expr(self, const): 
         self.type = DanaType("int") if const.name == "p_number" else DanaType("byte") 
-        self.value = const.value
+        if const.value in ["true", "false"]:
+            self.value = 1 if const.value == "true" else 0
+        else:
+            self.value = const.value
         self.operator = "const"
         return
 
@@ -89,31 +102,35 @@ class DanaExpr(object):
             return
 
         if (operator == "!" and child.type != DanaType("byte")) or \
-             (operator == "-" and child.type != DanaType("int")):
+           (operator == "-" and child.type != DanaType("int")) or \
+           (operator == "not" and child.type != DanaType("logic")):
             print("Lines {}: Operator {} for expression {}", operator, str(child.type)) 
 
         self.children.append(child)         
-        self.operator = "neg" if operator == "-" else "!"
+        self.operator = "neg" if operator == "-" else operator
         self.type = child.type
         return
 
     
-    def _make_binary(self, operator, expr1, expr2, symbol_table): 
-        op1 = DanaExpr(expr1, symbol_table) 
-        op2 = DanaExpr(expr2, symbol_table) 
+    def _make_binary(self, operator, arg1, arg2, symbol_table): 
+        op1 = DanaExpr(arg1, symbol_table) 
+        op2 = DanaExpr(arg2, symbol_table) 
         if op1.type != op2.type:
-            print("Lines {},{}: Operands {} and {}".format(expr1.linespan, expr2.linespan, str(op1.type), str(op2.type))) 
+            print("Lines {},{}: Operands {} and {}".format(arg1.linespan, arg2.linespan, str(op1.type), str(op2.type))) 
             return
 
 
-        if operator in ["+", "-", "STAR", "SLASH", "PERCENT"] and not op1.type in [DanaType("int"), DanaType("byte")]:
-            print("Lines {},{}: Operands {} for arithmetic operation", expr1.linespan, expr2.linespan, str(self.type)) 
+        if operator in ["+", "-", "STAR", "SLASH", "PERCENT", "<", "<=", ">=", ">", "=", "!="] and not op1.type in [DanaType("int"), DanaType("byte")]:
+            print("Lines {},{}: Operands {} for arithmetic operation", arg1.linespan, arg2.linespan, str(self.type)) 
             return
 
         if operator in ["&", "|"] and op1.type != DanaType("byte"):
-            print("Lines {},{}: Operands {} for byte operation", expr1.linespan, expr2.linespan, str(self.type)) 
+            print("Lines {},{}: Operands {} for byte operation", arg1.linespan, arg2.linespan, str(self.type)) 
             return
  
+
+        if operator in ["and", "or"] and not op1.type in [DanaType("logic"), DanaType("byte"), DanaType("int")]:
+            print("Lines {},{}: Operands {} for logic operation", arg1.linespan, arg2.linespan, str(self.type)) 
 
         new_names = dict({"STAR" : "*", "SLASH" : "/", "PERCENT" : "%"})
 
@@ -122,7 +139,7 @@ class DanaExpr(object):
         self.operator = new_names[operator] if operator in new_names else operator
 
         if not self.operator in self.operators:
-            print("INVALID BINARY OPERATOR")
+            print("INVALID BINARY OPERATOR " + self.operator)
 
 
     def _make_lvalue(self, dana_lvalue, symbol_table):
@@ -166,7 +183,21 @@ class DanaExpr(object):
 
 
 
-
+    def __str__(self):
+        ret = ""
+        num = len(self.children)
+        if num == 0:
+            ret += str(self.value)
+        elif num == 1:
+            ret += "({} )".format(self.operator, str(self.children[0]))
+    
+        elif num == 2:
+            ret += "({} {} {})".format(str(self.children[0]), self.operator, str(self.children[1]))
+    
+        else:
+            ret += "~" 
+    
+        return ret
 
 
 

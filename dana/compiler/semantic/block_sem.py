@@ -8,24 +8,6 @@ from compiler.semantic.type import DanaType as DanaType
 from compiler.semantic.expr import DanaExpr as DanaExpr 
 
 
-#TODO: Baumify
-def verify_cond(dana_cond, symbol_table): 
-    conds = dana_cond.find_all("p_cond")
-    if conds:
-        for cond in conds:
-            verify_cond(cond, symbol_table)
-        return
-
-    exprs = dana_cond.find_all("p_expr")
-    types = [DanaExpr(expr, symbol_table).type for expr in exprs]
-    if any(types[0] != t for t in types):
-        print("Lines {}: Invalid types {} in condition".format(dana_cond.linespan, list(str(t) for t in types)))
-         
-    if types[0] not in [DanaType("int"), DanaType("byte")]:
-        print("Lines {}: Unordered type {} used in comparison".format(dana_cond.linespan, str(types[0])))
-        
-    
-
 def verify_labeled_stmt(stmt, symbol_table):
     label = stmt.find_first("p_name")
     if label:
@@ -77,14 +59,14 @@ def verify_assign_stmt(stmt, symbol_table):
 # Traverse statement block, checking its symbols against the current stack
 def verify_block(block, symbol_table):
     if not block.stmts:
-        for child in block.children:
-            temp_table = copy(symbol_table) 
-            if block.conds:
-                for cond in block.conds:
-                    verify_cond(cond, symbol_table)
-            elif block.label:
-                temp_table[block.label] = DanaType("label")
+        temp_table = copy(symbol_table) 
+        if block.conds:
+            conds = [DanaExpr(cond, symbol_table) for cond in block.conds]
+            block.conds=  conds
+        if block.label:
+            temp_table[block.label] = DanaType("label")
             
+        for child in block.children:
             verify_block(child, temp_table)
     else:
         for stmt in block.stmts:
