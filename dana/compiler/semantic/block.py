@@ -1,29 +1,27 @@
 from copy import copy
-
-class DanaFunction(object):
-    def __init__(self, parent, symbol, defs, args, block):
-        self.parent = parent 
-        self.symbol = symbol
-        self.defs = defs 
-        self.args = args 
-        self.block= block 
-
-        self.children = []
-
-    def __str__(self):
-        ret = "-------{}-------\n".format(str(self.symbol)) 
-        ret += "Args: {}\n".format([str(arg) for arg in self.args])
-        ret += "Defs: {}\n".format([str(dana_def) for dana_def in self.defs])
-        ret += "Parent: {}\n".format(str(self.parent.symbol) if self.parent else "")
-        ret += "Children: {}\n".format(str([str(child.symbol) for child in self.children]))
-        return ret
+from compiler.semantic.stmt import DanaStmt as DanaStmt
+from compiler.semantic.expr import DanaExpr as DanaExpr
+from compiler.semantic.type import DanaType as DanaType
 
 class DanaBlock(object):
-    def __init__(self, dana_block = None, stmts = None, children = [], label = None, conds = None):
-        self.stmts = [stmt for stmt in stmts] if stmts else None
+    def __init__(self, symbol_table,  dana_block = None, stmts = None, children = [], label = None, conds = None):
         self.children = [child for child in children] if children else []
+
         self.label = label 
-        self.conds = [cond for cond in conds] if conds else None
+        local_table = copy(symbol_table)
+        if label:
+            local_table[label] = DanaType("label")
+
+        if conds:
+            self.conds = [DanaExpr(cond, local_table) for cond in conds]
+        else:
+            self.conds = None
+
+        if stmts:
+            self.stmts = [DanaStmt(stmt, local_table) for stmt in stmts]
+        else:
+            self.stmts = None
+    
 
         if not dana_block:
             return
@@ -37,7 +35,7 @@ class DanaBlock(object):
                 if basic_block: 
                     
                     child_stmts = [stmt for stmt in basic_block]
-                    self.children += [DanaBlock(stmts = child_stmts)]
+                    self.children += [DanaBlock(stmts = child_stmts, symbol_table = local_table)]
                     basic_block = []
                     
                 if stmt.find_first_child("p_loop_stmt"):
@@ -47,17 +45,17 @@ class DanaBlock(object):
                     if loop_label:
                        loop_label = dana_label.value 
                     loop_block = stmt.find_first("p_block")
-                    self.children += [DanaBlock(dana_block = loop_block, label = loop_label)]
+                    self.children += [DanaBlock(local_table, dana_block = loop_block, label = loop_label)]
                 elif stmt.find_first_child("p_if_stmt"):
 
                     components = stmt.multifind(["p_cond", "p_block"])
                     if_conds = [comp for comp in components if comp.name == "p_cond"]
-                    if_children = [DanaBlock(dana_block = comp) for comp in components if comp.name == "p_block"]
-                    self.children += [DanaBlock(children = if_children, conds = if_conds)]
+                    if_children = [DanaBlock(local_table, dana_block = comp) for comp in components if comp.name == "p_block"]
+                    self.children += [DanaBlock(local_table, children = if_children)]
 
         if basic_block: 
             child_stmts = [stmt for stmt in basic_block]
-            self.children += [DanaBlock(stmts = child_stmts)]
+            self.children += [DanaBlock(stmts = child_stmts, symbol_table = local_table)]
             basic_block = []
 
 

@@ -162,8 +162,8 @@ def p_var_def(p):
 def p_stmt(p):
     '''
         stmt : SKIP
-             | lvalue ASSIGN expr
              | proc_call
+             | assign_stmt
              | loop_stmt
              | cont_stmt
              | break_stmt
@@ -171,6 +171,12 @@ def p_stmt(p):
              | if_stmt
     '''
 
+#Helper token
+@ast_node()
+def p_assign_stmt(p):
+    '''
+        assign_stmt : lvalue ASSIGN expr
+    '''
 
 #Helper token
 @ast_node()
