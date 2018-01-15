@@ -161,7 +161,7 @@ def p_var_def(p):
 @ast_node()
 def p_stmt(p):
     '''
-        stmt : SKIP
+        stmt : skip_stmt
              | proc_call
              | assign_stmt
              | loop_stmt
@@ -169,6 +169,13 @@ def p_stmt(p):
              | break_stmt
              | ret_stmt
              | if_stmt
+    '''
+
+#Helper token
+@ast_node()
+def p_skip_stmt(p):
+    '''
+        skip_stmt : SKIP
     '''
 
 #Helper token
@@ -216,17 +223,16 @@ def p_ret_stmt(p):
 def p_if_stmt(p):
     '''
         if_stmt : IF cond COLON block 
-                | IF cond COLON block ELSE COLON block 
                 | IF cond COLON block elif_chain 
-                | IF cond COLON block elif_chain ELSE COLON block 
     '''
 
 # Helper token
 @ast_node()
 def p_elif_chain(p):
     '''
-       elif_chain : elif_chain ELIF cond COLON block 
+       elif_chain : ELIF cond COLON block elif_chain
                   | ELIF cond COLON block 
+                  | ELSE COLON block 
     '''
 
 @ast_node()
