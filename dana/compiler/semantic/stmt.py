@@ -2,19 +2,29 @@ from compiler.semantic.expr import DanaExpr as DanaExpr
 from compiler.semantic.type import DanaType as DanaType
 
 class DanaStmt(object):
+    operators = ["ret", "break", "continue", "call", "assign"]
+
     def __init__(self, dana_stmt, symbol_table):
+        self.value = None
         self.label = None 
         self.exprs = [] 
-        self.operation = None 
+        self.operator = None 
 
-        if dana_stmt.multifind(["p_cont_stmt", "p_break_stmt"]):
-            self.verify_labeled_stmt(dana_stmt, symbol_table)
-        elif dana_stmt.find_first_child("p_proc_call"):
-            self.verify_call_stmt(dana_stmt, symbol_table)
-        elif dana_stmt.find_first_child("p_ret__stmt"):
-            self.verify_ret_stmt(dana_stmt, symbol_table)
-        elif dana_stmt.find_first_child("lvalue"):
-            self.verify_assign_stmt(dana_stmt, symbol_table)
+        dana_stmt_children =  dana_stmt.multifind(["p_cont_stmt", "p_break_stmt", 
+                                                "p_proc_call", "p_ret_stmt",
+                                                "p_assign_stmt"])
+        # Guaranteed to have exactly one child
+        dana_child = dana_stmt_children[0]
+        name = dana_child.name
+
+        if name in ["p_const_stmt", "p_break_stmt"]:
+            self.verify_labeled_stmt(dana_child, symbol_table)
+        elif name == "p_proc_call": 
+            self.verify_call_stmt(dana_child, symbol_table)
+        elif name == "p_ret_stmt":
+            self.verify_ret_stmt(dana_child, symbol_table)
+        elif name == "p_assign_stmt":
+            self.verify_assign_stmt(dana_child, symbol_table)
 
 
 
@@ -27,14 +37,14 @@ class DanaStmt(object):
             elif symbol_table[label] != DanaType("label"):
                 print("Lines {}: Symbol {} not not a label".format(stmt.linespan, label))
         
-        operation = None
+        operator = None
         if stmt.name == "p_cont_stmt":
-            operation = "continue" 
+            operator = "continue" 
         elif stmt.name == "p_break_stmt":
-            operation = "break"
+            operator = "break"
 
         self.label = label
-        self.operation = operation
+        self.operator = operator
         
 
 
@@ -53,9 +63,9 @@ class DanaStmt(object):
         if expected_type != actual_type:
             print("Lines {}: Proc has type {} but called as {}".format(stmt.linespan, str(expected_type), str(actual_type)))
             
-        
+        self.value = proc_name  
         self.exprs = exprs
-        self.operation = "call"
+        self.operator = "call"
         
 
 
@@ -73,13 +83,13 @@ class DanaStmt(object):
             print("Lines {}: Function has type {} but returns {}".format(stmt.linespan, expected_type, actual_type))
 
         self.exprs = exprs 
-        self.operation = "ret"
+        self.operator = "ret"
       
 
 
-    def verify_assign_stmt(stmt, symbol_table):
-        lvalue = DanaExpr(stmt.get_first_child("p_lvalue"), symbol_table)
-        expr = DanaExpr(stmt.get_first_child("p_expr"), symbol_table)
+    def verify_assign_stmt(self, stmt, symbol_table):
+        lvalue = DanaExpr(stmt.find_first_child("p_lvalue"), symbol_table)
+        expr = DanaExpr(stmt.find_first_child("p_expr"), symbol_table)
 
         expected_type = lvalue.type 
         actual_type = expr.type
@@ -88,7 +98,7 @@ class DanaStmt(object):
 
 
         self.exprs = [lvalue, expr]
-        self.operation = "assign"
+        self.operator = "assign"
 
 
 

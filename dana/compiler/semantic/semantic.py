@@ -15,18 +15,18 @@ builtins = [
     Symbol("writeByte", DanaType("void", args = [DanaType("byte")])), 
     Symbol("writeChar", DanaType("void", args = [DanaType("byte")])),
     Symbol("writeString", DanaType("void", args = [DanaType("byte", [0])])), 
-    Symbol("readInteger", DanaType("int", args = [DanaType("void")])), 
-    Symbol("readByte", DanaType("byte", args = [DanaType("void")])), 
-    Symbol("readChar", DanaType("byte", args = [DanaType("void")])), 
-    Symbol("readString", DanaType("byte", [0], args = [DanaType("void")])),     
+    Symbol("readInteger", DanaType("int", args = [])), 
+    Symbol("readByte", DanaType("byte", args = [])), 
+    Symbol("readChar", DanaType("byte", args = [])), 
+    Symbol("readString", DanaType("byte", [0], args = [])),     
     Symbol("strlen", DanaType("int", args = [DanaType("byte", [0])])), 
     Symbol("strcmp", DanaType("int", args = [DanaType("byte", [0]), DanaType("byte", [0])])), 
     Symbol("strcat", DanaType("byte", [0], args = [DanaType("byte", [0]), DanaType("byte", [0])])), 
     Symbol("strcpy", DanaType("byte", [0], args = [DanaType("byte", [0]), DanaType("byte", [0])])), 
     Symbol("extend", DanaType("int", args = [DanaType("byte")])), 
     Symbol("shrink", DanaType( "byte", args = [DanaType("int")])), 
-    Symbol("main", DanaType("void", args = [DanaType("void")])),
 ]
+
 
 
 #Subtrees: <fpar-type> | <type> | <data-type>
@@ -41,6 +41,7 @@ def get_type(dana_type):
     ref = True if dana_type.find_first("p_ref") else False
          
     return DanaType(base, dims = dims, ref = ref)
+
 
 
 #Subtree: <id> ["is" <data-type>] [":" <fpar-def> (",", <fpar-def>)*]
@@ -58,6 +59,7 @@ def get_function_symbol(dana_header):
 
     return Symbol(name, DanaType(base, args = args))
 
+
         
 #Subtree: (<id>)+ "as" <fpar-type> | "var" (<id>)+ "is" <type>
 # Traverses both p_var_def and p_fpar_def tokens
@@ -69,6 +71,7 @@ def get_variable_symbols(dana_def):
     return [Symbol(var, var_type) for var in variables]
  
 
+
 def produce_function(dana_function, parent = None, global_table = dict()):
     
     dana_header = dana_function.find_first("p_header")
@@ -78,7 +81,8 @@ def produce_function(dana_function, parent = None, global_table = dict()):
     dana_local_def_list = dana_function.find_first_child("p_local_def_list")
     dana_local_defs = []
     if dana_local_def_list:
-        dana_local_defs = dana_function.find_first("p_local_def_list").multifind(["p_func_def", "p_func_decl", "p_var_def"])
+        dana_local_defs = dana_function.find_first("p_local_def_list") \
+                                       .multifind(["p_func_def", "p_func_decl", "p_var_def"])
 
     local_table = copy(global_table)
     local_table["$"] = function.type
@@ -107,8 +111,8 @@ def produce_function(dana_function, parent = None, global_table = dict()):
                 for key in local_table.keys():
                     temp_table[key] = local_table[key]
 
-                function.children.append(produce_function(local_def, function, temp_table))
-                #print(produce_function(local_def, function, temp_table))
+                new_function = produce_function(local_def, function, temp_table)
+                function.children.append(new_function)
 
         elif local_def.name in ["p_var_def", "p_fpar_def"]:
             names = map(lambda name: name.value, local_def.find_all("p_name"))
@@ -131,7 +135,7 @@ def produce_function(dana_function, parent = None, global_table = dict()):
             local_table[symbol.name] = symbol.type 
          
     dana_block = dana_function.find_first_child("p_block")
-    function.block = DanaBlock(dana_block = dana_block, symbol_table = local_table) 
+    function.block = DanaBlock(local_table, dana_block = dana_block, btype = "container") 
 
     return function
 
@@ -144,21 +148,21 @@ def produce_program(main_function):
     
     return produce_function(main_function, global_table = global_table)
 
+
+
 def test():
     try:
         program = open(sys.argv[1], 'r')
     except IOError:
         print("Unable to open file. Exiting...")
         return
+
     lexer = lex()  
     yacc = parser(start='program')
-    ast = yacc.parse(program.read(),tracking=True,debug=False)
 
-    main_function = ast.children[0]
-    
+    ast = yacc.parse(program.read(),tracking=True,debug=False)
+    main_function = ast.children[0] 
     function = produce_program(main_function)
-        
-    #print(function)
 
     return
 
