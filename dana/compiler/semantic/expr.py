@@ -166,37 +166,36 @@ class DanaExpr(object):
             print("INVALID BINARY OPERATOR " + self.operator)
 
 
-    # Possibilities: string, id, lvalue with index
     def _make_lvalue(self, dana_lvalue, symbol_table):
 
         string = dana_lvalue.find_first_child("p_string")
         if string:
-            self.type = DanaType("byte", dims = [len(string.value) + 1])
-            self.value = string.value + '\0'
-            self.operator = "string"
+            dtype = DanaType("byte", dims = [len(string.value) + 1])
+            self._set_attributes([], dtype, "string", string.value + '\0')
             return
 
 
-        name = dana_lvalue.find_first_child("p_name").value
-        if name:
-            if name not in symbol_table:
+        dana_id = dana_lvalue.find_first_child("p_name")
+        if dana_id:
+            name = dana_id.value
+            if name  not in symbol_table:
                 print("Lines {}: Symbol {} not in scope".format(dana_lvalue.linespan, name))
                 return
 
-            self._set_attributes([], symbol_table[name], "lvalue", name)
+            
+            self._set_attributes([], symbol_table[name], "lvalue", value = name)
             return
 
         
-        dana_expr = stmt.find_first_child("p_expr")
+        dana_expr = dana_lvalue.find_first_child("p_expr")
         if dana_expr:
-
             expr = DanaExpr(dana_expr, symbol_table) 
             if expr.type != DanaType("int"):
                 print("Lines {}: Type {} used as index"
                         .format(dana_lvalue.linespan, expr.type))
                 return
     
-            dana_lvalue_child = lvalue.find_first_child("p_lvalue")
+            dana_lvalue_child = dana_lvalue.find_first_child("p_lvalue")
             child = DanaExpr(dana_lvalue_child, symbol_table)
             if not child.type.dims:
                 print("Lines {}: Base type {} dereferenced" \
@@ -206,8 +205,8 @@ class DanaExpr(object):
 
             dtype = DanaType(child.type.base, \
                                  dims = child.type.dims[1:], \
-                                 args = child.type.ops)
-            self._set_attributes([child], dtype, "lvalue")
+                                 args = child.type.args)
+            self._set_attributes([child], dtype, "lvalue", value = expr)
             return
 
 
@@ -216,7 +215,7 @@ class DanaExpr(object):
             self.children = children
             self.type = dtype
             self.operator = operator
-            self.value = None
+            self.value = value 
 
 
     def __str__(self):
@@ -225,7 +224,7 @@ class DanaExpr(object):
         if num == 0:
             ret += str(self.value)
         elif num == 1:
-            ret += "({} )".format(self.operator, str(self.children[0]))
+            ret += "({} {})".format(self.operator, str(self.children[0]))
     
         elif num == 2:
             ret += "({} {} {})".format(str(self.children[0]), self.operator, str(self.children[1]))
