@@ -8,7 +8,7 @@ from compiler.semantic.symbol import Symbol as Symbol
 from compiler.semantic.stmt import DanaStmt as DanaStmt 
 from compiler.semantic.func import DanaFunction as DanaFunction 
 from compiler.semantic.expr import DanaExpr as DanaExpr
-from compiler.semantic.block import DanaBlock as DanaBlock 
+from compiler.semantic.block import DanaContainer as DanaContainer
 
 builtins = [
     Symbol("writeInteger", DanaType("void", args = [DanaType("int")])), 
@@ -140,7 +140,7 @@ def produce_function(dana_function, parent = None, global_table = dict(), is_mai
             local_table[symbol.name] = symbol.type 
          
     dana_block = dana_function.find_first_child("p_block")
-    function.block = DanaBlock(local_table, dana_block = dana_block, btype = "container") 
+    function.block = DanaContainer(local_table, dana_block=dana_block) 
 
     return function
 
