@@ -68,53 +68,62 @@ def irgen_expr(expr, builder, addr_table):
         if not expr.value in constant_names:
             irgen_string(expr, builder)         
         return constant_names[expr.value]
+    elif operator == "id": 
+        return irgen_expr(operand, builder, addr_table)
 
-    elif len(expr.children) == 1:
+
+    if len(expr.children) == 1:
         operand = irgen_expr(expr.children[0], builder, addr_table)
-        if operator == "id": 
-            return irgen_expr(operand, builder, addr_table)
-        elif operator == "neg": 
-            return builder.neg(operand, builder, addr_table)
-        elif operator == "!": 
-            byte_one = ir.Constant(irtype["byte"], 0x1)
-            last_byte = builder.and_(byte_one, operand)
-            return builder.sub(byte_one, operand)
-        elif operator == "not":
-            return builder.not_(operand) 
+        return irgen_unary(builder, operator, operand, addr_table)
 
-    elif len(expr.children) == 2:
+    else:
         first = irgen_expr(expr.children[0], builder, addr_table)
         second = irgen_expr(expr.children[1], builder, addr_table)
-        if operator == "+":
-            return builder.add(first, second) 
-        elif operator == "-":
-            return builder.sub(first, second) 
-        elif operator == "*":
-            return builder.mul(first, second) 
-        elif operator == "/":
-            return builder.div(first, second) 
-        elif operator == "%":
-            return builder.rem(first, second) 
-        elif operator == "&":
-            return builder.and_(first, second) 
-        elif operator == "|":
-            return builder.or_(first, second) 
-        elif operator == "and":
-            return builder.or_(first, second) 
-        elif operator == "or":
-            return builder.or_(first, second) 
-        elif operator == "=":
-            return builder.icmp_signed("==", first, second) 
-        elif operator == "!=":
-            return builder.icmp_signed("!=", first, second) 
-        elif operator == "<":
-            return builder.icmp_signed("<", first, second) 
-        elif operator == "<=":
-            return builder.icmp_signed("<=", first, second) 
-        elif operator == ">=":
-            return builder.icmp_signed(">=", first, second) 
-        elif operator == ">":
-            return builder.icmp_signed(">", first, second) 
+        return irgen_binary(builder, operator, first, second)
+
+
+
+def irgen_unary(builder, operator, operand):
+    operations = dict({"neg": irgen_neg,
+                        "!": irgen_bang,
+                        "not": irgen_not,})
+    return operations[operator](builder, operand)
+
+
+def irgen_neg(builder, operand):
+    return builder.neg(operand)
+
+def irgen_bang(builder, operand):
+    byte_one = ir.Constant(irtype["byte"], 0x1)
+    last_byte = builder.and_(byte_one, operand)
+    return builder.sub(byte_one, operand)
+
+def irgen_not(builder, operand):
+    return builder.not_(operand) 
+
+
+
+
+def irgen_binary(builder, operator, first, second):
+    operations = dict({"+": builder.add,
+                       "-": builder.sub,
+                       "*": builder.mul,
+                       "/": builder.sdiv,
+                       "%": builder.srem,
+                       "&": builder.and_,
+                       "|": builder.or_,
+                       "and": builder.and_, 
+                       "or": builder.or_,
+                       })
+
+    comparisons = ["==", "!=", "<", "<=", ">=", ">",]
+
+    if operator in comparisons:
+        return builder.icmp_signed(operator, first, second)    
+        
+    return operations[operator](first, second)
+
+
 
 
 def irgen_lvalue(lvalue, builder, addr_table):
@@ -290,6 +299,10 @@ def irgen_func(function, module, addr_table):
     builder.branch(func.blocks[1])
     exit = func.append_basic_block(name="exit")
     builder = ir.IRBuilder(exit)
+    if function.is_main and True:
+        builder.call(function_table["exit"], [ir.Constant(ir.IntType(8), 0)])
+        # Actually unreachable, but we do not explicitly denote it to avoid
+        # optimizing the block out of existence
     builder.ret_void()
     
     for blk in blks:
@@ -313,6 +326,7 @@ def irgen(main):
 
 
     irgen_func(main, module, addr_table)
+    
     print(module)
 
 

@@ -25,6 +25,7 @@ builtins = [
     Symbol("strcpy", DanaType("byte", [0], args = [DanaType("byte", [0]), DanaType("byte", [0])])), 
     Symbol("extend", DanaType("int", args = [DanaType("byte")])), 
     Symbol("shrink", DanaType( "byte", args = [DanaType("int")])), 
+    Symbol("exit", DanaType("void", args = [DanaType("byte")])), 
 ]
 
 
@@ -72,7 +73,7 @@ def get_variable_symbols(dana_def):
  
 
 
-def produce_function(dana_function, parent = None, global_table = dict()):
+def produce_function(dana_function, parent = None, global_table = dict(), is_main = False):
     
     dana_header = dana_function.find_first("p_header")
     function = get_function_symbol(dana_header)
@@ -95,7 +96,11 @@ def produce_function(dana_function, parent = None, global_table = dict()):
     funcs = []
  
     function = DanaFunction(parent, function, defs, args, block = None) 
-    local_table[function.symbol.name] = function.symbol.type
+    
+    # Main isn't actually a function
+    function.is_main = is_main
+    if is_main:
+        local_table[function.symbol.name] = function.symbol.type
 
     for local_def in dana_args + dana_local_defs:
         symbols = None
@@ -146,7 +151,7 @@ def produce_program(main_function):
     for symbol in builtins:
         global_table[symbol.name] = symbol.type 
     
-    return produce_function(main_function, global_table = global_table)
+    return produce_function(main_function, global_table = global_table, is_main = True)
 
 
 
