@@ -72,20 +72,20 @@ ignored = (
 
 
 
-t_PLUS = r'\+' 
-t_MINUS = r'-' 
-t_STAR = r'\*' 
-t_SLASH = r'/' 
+t_PLUS = r'\+'
+t_MINUS = r'-'
+t_STAR = r'\*'
+t_SLASH = r'/'
 t_PERCENT = r'%'
-t_EXCLAMATION = r'!'  
+t_EXCLAMATION = r'!'
 t_AMPERSAND = r'&'
-t_VERTICAL = r'\|' 
-t_EQUAL = r'=' 
-t_UNEQUAL = r'<>' 
-t_LESS = r'<' 
-t_GREATER = r'>' 
+t_VERTICAL = r'\|'
+t_EQUAL = r'='
+t_UNEQUAL = r'<>'
+t_LESS = r'<'
+t_GREATER = r'>'
 t_LESSEQUAL = r'<='
-t_GREATEREQUAL = r'>=' 
+t_GREATEREQUAL = r'>='
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_LBRACK = r'\['
@@ -102,7 +102,7 @@ t_ignore_WHITESPACE = r'\s'
 def t_NEWLINE(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
-    return None 
+    return None
 
 
 def t_NUMBER(t):
@@ -133,16 +133,16 @@ states = (
 
 def t_COMMENT_START(t):
     r'\(\*'
-    t.lexer.push_state('comment')	
+    t.lexer.push_state('comment')
 
 t_comment_COMMENT_START = t_COMMENT_START
-	
+
 def t_comment_COMMENT_END(t):
     r'\*\)'
-    t.lexer.pop_state()	
+    t.lexer.pop_state()
 
-# Not ACTUALLY an error state; rather, 
-# it catches everything in the comments 
+# Not ACTUALLY an error state; rather,
+# it catches everything in the comments
 def t_comment_error(t):
     t.lexer.skip(1)
 
@@ -152,7 +152,7 @@ def t_error(t):
     t.lexer.skip(1)
 
 tokens =  separators + elements + operators \
-            + tuple(reserved.values())  
+            + tuple(reserved.values())
 
 
 def test():
@@ -163,7 +163,7 @@ def test():
     lexer = lex()
     try:
         program = open(sys.argv[1], 'r')
-    except:
+    except IOError:
         print("Unable to open file. Exiting...")
         return
     lexer.input(program.read())

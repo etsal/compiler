@@ -1,18 +1,18 @@
-from functools import wraps
-from ply.yacc import yacc as yacc
-from compiler.parser.lexer import lex as lex, tokens as tokens
-from compiler.parser.node import Node as Node  
 import sys
+from functools import wraps
+from compiler.parser.lexer import lex as lex, tokens as tokens
+from compiler.parser.node import Node as Node
+from ply.yacc import yacc as yacc
 
 precedence = (
     ('left', 'PLUS', 'MINUS', 'VERTICAL'),
     ('left', 'STAR', 'SLASH', 'PERCENT', 'AMPERSAND'),
-    ('right', 'UPLUS', 'UMINUS', 'EXCLAMATION'), 
+    ('right', 'UPLUS', 'UMINUS', 'EXCLAMATION'),
     ('nonassoc', 'EQUAL', 'UNEQUAL', \
         'LESS', 'GREATER', 'LESSEQUAL', 'GREATEREQUAL'),
     ('right', 'NOT'),
     ('left', 'AND'),
-    ('right', 'OR'), 
+    ('right', 'OR'),
 )
 
 
@@ -24,9 +24,9 @@ def base_decorator(is_value):
         def wrapper(p):
             func(p)
             if is_value:
-                p[0] = Node(func.__name__, value = p[1], linespan = p.linespan(0))
+                p[0] = Node(func.__name__, value=p[1], linespan=p.linespan(0))
             else:
-                p[0] = Node(func.__name__, *p[1:], linespan = p.linespan(0))
+                p[0] = Node(func.__name__, *p[1:], linespan=p.linespan(0))
         # Line number update needed for the parser
         wrapper.co_firstlineno = func.__code__.co_firstlineno
         return wrapper
@@ -58,8 +58,8 @@ def p_func_def(p):
 @ast_node()
 def p_local_def_list(p):
     '''
-        local_def_list : local_def_list local_def 
-                       | local_def 
+        local_def_list : local_def_list local_def
+                       | local_def
     '''
 
 @ast_node()
@@ -80,7 +80,7 @@ def p_maybe_data_type(p):
 @ast_node()
 def p_maybe_parameter_list(p):
     '''
-        maybe_parameter_list : COLON fpar_def 
+        maybe_parameter_list : COLON fpar_def
                              | COLON fpar_def parameter_list
                              |
     '''
@@ -103,7 +103,7 @@ def p_fpar_def(p):
 @ast_node()
 def p_name_list(p):
     '''
-        name_list : name_list name 
+        name_list : name_list name
                   | name
     '''
 
@@ -117,17 +117,17 @@ def p_data_type(p):
 @ast_node()
 def p_type(p):
     '''
-        type : data_type 
+        type : data_type
              | data_type index_list
     '''
 
 @ast_node()
 def p_fpar_type(p):
     '''
-        fpar_type : type 
+        fpar_type : type
                   | ref data_type
-                  | data_type empty_brackets 
-                  | data_type empty_brackets index_list 
+                  | data_type empty_brackets
+                  | data_type empty_brackets index_list
     '''
 
 # Helper token
@@ -135,7 +135,7 @@ def p_fpar_type(p):
 def p_index_list(p):
     '''
         index_list : index_list LBRACK number RBRACK
-                   | LBRACK number RBRACK 
+                   | LBRACK number RBRACK
     '''
 
 @ast_node()
@@ -149,13 +149,13 @@ def p_local_def(p):
 @ast_node()
 def p_func_decl(p):
     '''
-        func_decl : DECL header 
+        func_decl : DECL header
     '''
 
 @ast_node()
 def p_var_def(p):
     '''
-        var_def : VAR name_list IS type 
+        var_def : VAR name_list IS type
     '''
 
 @ast_node()
@@ -191,7 +191,7 @@ def p_loop_stmt(p):
     '''
         loop_stmt   : LOOP COLON block
                     | LOOP name COLON block
-    ''' 
+    '''
 
 #Helper token
 @ast_node()
@@ -222,8 +222,8 @@ def p_ret_stmt(p):
 @ast_node()
 def p_if_stmt(p):
     '''
-        if_stmt : IF cond COLON block 
-                | IF cond COLON block elif_chain 
+        if_stmt : IF cond COLON block
+                | IF cond COLON block elif_chain
     '''
 
 # Helper token
@@ -231,8 +231,8 @@ def p_if_stmt(p):
 def p_elif_chain(p):
     '''
        elif_chain : ELIF cond COLON block elif_chain
-                  | ELIF cond COLON block 
-                  | ELSE COLON block 
+                  | ELIF cond COLON block
+                  | ELSE COLON block
     '''
 
 @ast_node()
@@ -246,15 +246,15 @@ def p_block(p):
 @ast_node()
 def p_stmt_list(p):
     '''
-       stmt_list : stmt_list stmt 
-                 | stmt 
+       stmt_list : stmt_list stmt
+                 | stmt
     '''
 
 @ast_node()
 def p_proc_call(p):
     '''
-        proc_call : name 
-                  | name COLON expr_list 
+        proc_call : name
+                  | name COLON expr_list
     '''
 
 @ast_node()
@@ -268,14 +268,14 @@ def p_func_call(p):
 @ast_node()
 def p_expr_list(p):
     '''
-        expr_list : expr_list COMMA expr 
-                  | expr 
+        expr_list : expr_list COMMA expr
+                  | expr
     '''
 
 @ast_node()
 def p_lvalue(p):
     '''
-        lvalue : name 
+        lvalue : name
                | string
                | lvalue LBRACK expr RBRACK
     '''
@@ -283,8 +283,8 @@ def p_lvalue(p):
 @ast_node()
 def p_expr(p):
     '''
-        expr : number 
-             | char 
+        expr : number
+             | char
              | lvalue
              | LPAREN expr RPAREN
              | func_call
@@ -295,10 +295,10 @@ def p_expr(p):
              | expr STAR expr
              | expr SLASH expr
              | expr PERCENT expr
-             | boolean 
+             | boolean
              | EXCLAMATION expr
              | expr AMPERSAND expr
-             | expr VERTICAL expr 
+             | expr VERTICAL expr
 
     '''
 
@@ -331,73 +331,71 @@ def p_cond(p):
 
 @ast_node()
 def p_ref(p):
-   '''
-        ref : REF 
-   ''' 
-        
+    '''
+        ref : REF
+    '''
+
 @ast_node()
 def p_empty_brackets(p):
-   '''
-        empty_brackets : LBRACK RBRACK 
-   ''' 
-    
+    '''
+        empty_brackets : LBRACK RBRACK
+    '''
+
 
 @ast_value()
 def p_name(p):
-   '''
+    '''
         name : NAME
-   ''' 
+    '''
 
 @ast_value()
-def p_char(p): 
-   '''
-        char : CHAR 
-   ''' 
+def p_char(p):
+    '''
+        char : CHAR
+    '''
 
 @ast_value()
 def p_number(p):
-   '''
-        number : NUMBER 
-   ''' 
-    
+    '''
+        number : NUMBER
+    '''
+
 @ast_value()
 def p_boolean(p):
-   '''
+    '''
         boolean : TRUE
                 | FALSE
-   ''' 
-    
+    '''
+
 @ast_value()
 def p_string(p):
-   '''
-        string : STRING 
-   ''' 
- 
+    '''
+        string : STRING
+    '''
+
 def p_error(p):
     print("Parsing error on token", p)
-    return;
+    return
 
 def parser(start):
     return yacc(start=start, write_tables=False)
 
 def test():
-    lexer = lex() 
+    lexer = lex()
     try:
         program = open(sys.argv[1], 'r')
     except IOError:
         print("Unable to open file. Exiting...")
         return
 
-#    lexer.input(program.read())
-    
-    parser = yacc(start='program', write_tables=False)
 
-    ast = parser.parse(program.read(),debug=False)
+    test_parser = yacc(start='program', write_tables=False)
+
+    ast = test_parser.parse(program.read(), debug=False)
     print(ast)
-    #print("TOP: " + ast.top().name)
 
     return
-    
+
 
 if __name__ == "__main__":
     test()
