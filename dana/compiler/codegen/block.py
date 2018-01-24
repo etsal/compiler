@@ -1,37 +1,6 @@
-from compiler.codegen.expr import irgen_lvalue as irgen_lvalue, irgen_expr as irgen_expr
+from compiler.codegen.expr import irgen_expr as irgen_expr
+from compiler.codegen.stmt import irgen_stmt as irgen_stmt
 from llvmlite import ir as ir
-
-
-def irgen_stmt(stmt, builder, table):
-    
-    operator = stmt.operator
-    if operator == "ret":
-        if not stmt.exprs:
-            return builder.ret_void()
-        else:
-            retval = irgen_expr(stmt.exprs[0], builder, table)
-            return builder.ret(retval) 
-    elif operator == "continue":
-        tmp = builder.unreachable()             
-        if stmt.label:
-            table.conts[tmp] = (builder.block, table[stmt.label])
-        else:
-            table.conts[tmp] = (builder.block, None)
-        return tmp
-    elif operator == "break":
-        tmp = builder.unreachable()             
-        if stmt.label:
-            table.breaks[tmp] = (builder.block, table[stmt.label])
-        else:
-            table.breaks[tmp] = (builder.block, None) 
-        return tmp
-    elif operator == "call":
-        args = [irgen_expr(expr, builder, table) for expr in stmt.exprs]
-        return builder.call(table.funcs[stmt.value], args)
-    elif operator == "assign":
-        lvalue = irgen_lvalue(stmt.exprs[0], builder, table)
-        expr = irgen_expr(stmt.exprs[1], builder, table)
-        return builder.store(expr, lvalue)
 
 
 def irgen_block(func, block, table):
@@ -45,14 +14,13 @@ def irgen_block(func, block, table):
     return irgen[btype](func, block, table)
 
 
+
 def irgen_if(func, block, table):
     start = func.append_basic_block()
     builder = ir.IRBuilder(start)
     pred = irgen_expr(block.cond, builder, table)
 
-
-    temp = builder.unreachable()
-    
+    temp = builder.unreachable()    
     if_blks = irgen_block(func, block.if_path, table)
 
     else_blks = []
@@ -65,9 +33,6 @@ def irgen_if(func, block, table):
         table.nexts[tmp] = (builder.block, None)
 
     start.replace(temp, ir.ConditionalBranch(start, "br", [pred, if_blks[0], else_blks[0]]))
-    
-        
-
     return [start] + if_blks + else_blks 
 
          
@@ -75,8 +40,6 @@ def irgen_loop(func, block, table):
     blks = []
 
     entry = func.append_basic_block(block.label)
-    
-
     blks = irgen_block(func, block.block, table)
 
     entry_builder = ir.IRBuilder(entry)
@@ -118,8 +81,7 @@ def irgen_container(func, block, table):
         previous = children
         children = irgen_block(func, child, table)
         for blk in previous:
-            if isinstance(blk.instructions[-1], ir.Unreachable) and \
-               blk.instructions[-1] in table.nexts:
+            if blk.instructions[-1] in table.nexts:
                 blk.replace(blk.instructions[-1], ir.Branch(blk, "br", [children[0]]))
 
         blks += children 
