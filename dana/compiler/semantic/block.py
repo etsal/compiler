@@ -4,9 +4,17 @@ from compiler.semantic.expr import DanaExpr as DanaExpr
 from compiler.semantic.type import DanaType as DanaType
 
 class DanaBlock(object):
-        
+    def __init__(self):
+        self.label = ""
+        self.cond = None
+        self.children = None
+        self.stmts = None
+
     def __eq__(self, other):
-        return self.label == other.label and self.cond == other.cond and self.children == other.children and self.stmts == other.stmts
+        return self.label == other.label and \
+               self.cond == other.cond and \
+               self.children == other.children and \
+               self.stmts == other.stmts
 
 
     def __ne__(self, other):
@@ -16,17 +24,17 @@ class DanaBlock(object):
 
 
 class DanaBasic(DanaBlock):
-
     def __init__(self, symbol_table, dana_stmts):
+        super().__init__()
         self.type = "basic"
         self.stmts = [DanaStmt(dana_stmt, symbol_table) for dana_stmt in dana_stmts]
 
 
 class DanaLoop(DanaBlock):
-
     def __init__(self, symbol_table, dana_stmt):
+        super().__init__()
         self.type = "loop"
-        self.label = "" 
+        self.label = ""
         dana_label = dana_stmt.find_first_child("p_name")
         if dana_label:
             self.label = dana_label.value
@@ -41,6 +49,7 @@ class DanaLoop(DanaBlock):
 class DanaIf(DanaBlock):
 
     def __init__(self, symbol_table, dana_stmt):
+        super().__init__()
         self.type = "if"
         dana_cond = dana_stmt.find_first_child("p_cond")
         self.cond = DanaExpr(dana_cond, symbol_table)
@@ -53,7 +62,7 @@ class DanaIf(DanaBlock):
         if dana_elif:
             if dana_elif.find_first_child("p_cond"):
                 self.else_path = \
-                    DanaIf(symbol_table, dana_block=dana_elif)
+                    DanaIf(symbol_table, dana_stmt=dana_elif)
             else:
 
                 dana_block = dana_elif.find_first_child("p_block")
@@ -63,8 +72,8 @@ class DanaIf(DanaBlock):
 
 
 class DanaContainer(DanaBlock):
-
     def __init__(self, symbol_table, dana_block):
+        super().__init__()
         self.type = "container"
         basic_block = []
         self.children = []
@@ -101,8 +110,3 @@ class DanaContainer(DanaBlock):
             self.children += \
                 [DanaBasic(symbol_table, dana_stmts=dana_stmts_children)]
             basic_block = []
-
-
-
-
-

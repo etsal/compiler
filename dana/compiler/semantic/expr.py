@@ -20,23 +20,19 @@ class DanaExpr(object):
     def __init__(self, dana_expr, symbol_table):
         self._set_attributes([], DanaType("invalid"), None)
 
-
         # Because the parsing rule is cond : expr| xcond
         if dana_expr.name == "p_cond":
             dana_expr = dana_expr.children[0]
-
 
         const = dana_expr.multifind_children(["p_number", "p_char", "p_boolean"])
         if const:
             self._make_const_expr(const[0])
             return
 
-
         dana_func_call = dana_expr.find_first_child("p_func_call")
         if dana_func_call:
             self._make_func_call(dana_func_call, symbol_table)
             return
-
 
         dana_lvalue = dana_expr.find_first_child("p_lvalue")
         # Small hack: lvalues are also represented by DanaExpr, so
@@ -49,12 +45,9 @@ class DanaExpr(object):
             self._make_lvalue(dana_lvalue, symbol_table)
             return
 
-
         args = dana_expr.multifind(["p_expr", "p_cond"])
         if len(args) == 1:
             self._make_unary(dana_expr.children[0], args[0], symbol_table)
-            return
-
 
         elif len(args) == 2:
             self._make_binary(dana_expr.children[1], args[0], args[1], symbol_table)
@@ -79,12 +72,10 @@ class DanaExpr(object):
             print("Lines {}: Symbol {} not in scope".format(dana_func_call.linespan, name))
             return
 
-
         expected_args = symbol_table[name].args
         if expected_args is None:
             print("Lines {}: Nonfunction called as function", dana_func_call.linespan, name)
             return
-
 
         dana_exprs = dana_func_call.find_all("p_expr")
         exprs = [DanaExpr(dana_expr, symbol_table) for dana_expr in dana_exprs]
@@ -93,7 +84,6 @@ class DanaExpr(object):
             print("Lines {}: Arguments {} in function call {} instead of {} " \
                         .format(dana_func_call.linespan, \
                                 [str(t) for t in types], name, [str(t) for t in expected_args]))
-
 
         dtype = DanaType(symbol_table[name].base)
         self._set_attributes([], dtype, "call", value=name)
@@ -116,7 +106,6 @@ class DanaExpr(object):
            (operator == "-" and child.type != DanaType("int")) or \
            (operator == "not" and child.type != DanaType("logic")):
             print("Lines {}: Operator {} for expression {}", operator, str(child.type))
-
 
         operator = "neg" if operator == "-" else operator
         self._set_attributes([child], child.type, operator)
@@ -163,6 +152,7 @@ class DanaExpr(object):
 
         if not self.operator in self.operators:
             print("INVALID BINARY OPERATOR " + self.operator)
+
 
 
     def _make_lvalue(self, dana_lvalue, symbol_table):
