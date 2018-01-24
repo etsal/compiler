@@ -6,7 +6,7 @@ class DanaExpr(object):
 
     arithmetic_ops = ["+", "-", "*", "/", "%"]
     bit_ops = ["&", "|"]
-    comparison_ops = ["=", "!=", "<", "<=", ">=", ">"]
+    comparison_ops = ["==", "!=", "<", "<=", ">=", ">"]
     logic_ops = ["and", "or"]
 
     lvalue_ops = ["const", "id", "string", "lvalue"]
@@ -123,8 +123,6 @@ class DanaExpr(object):
 
         # Map some operators to their symbols
         new_names = dict({"STAR" : "*", "SLASH" : "/", "PERCENT" : "%", "=" : "==",})
-        if operator in new_names:
-            operator = new_names[operator]
 
 
         if operator in self.binary_ops + self.comparison_ops and \

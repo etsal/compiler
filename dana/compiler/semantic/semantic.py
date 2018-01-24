@@ -6,6 +6,7 @@ from compiler.parser.parser import parser as parser
 from compiler.semantic.type import DanaType as DanaType
 from compiler.semantic.symbol import Symbol as Symbol
 from compiler.semantic.func import DanaFunction as DanaFunction
+from compiler.semantic.table import Table as Table
 from compiler.semantic.block import DanaContainer as DanaContainer
 
 builtins = [
@@ -45,7 +46,8 @@ def get_type(dana_type):
 
 #Subtree: <id> ["is" <data-type>] [":" <fpar-def> (",", <fpar-def>)*]
 # Traverse function header, extracting the type of the function it refers to
-def get_function_symbol(dana_header):
+def get_function_symbol(dana_function):
+    dana_header = dana_function.find_first("p_header")
     name = dana_header.find_first("p_name").value
 
     base = dana_header.find_first("p_maybe_data_type").find_first("p_data_type")
@@ -70,11 +72,9 @@ def get_variable_symbols(dana_def):
     return [Symbol(var, var_type) for var in variables]
 
 
-
-def produce_function(dana_function, parent=None, global_table=dict(), is_main=False):
-
+def get_function_variables(dana_function):
+    # Find all subtrees with definitions/declarations
     dana_header = dana_function.find_first("p_header")
-    function = get_function_symbol(dana_header)
     dana_args = dana_header.find_all("p_fpar_def")
 
     dana_local_def_list = dana_function.find_first_child("p_local_def_list")
@@ -83,72 +83,68 @@ def produce_function(dana_function, parent=None, global_table=dict(), is_main=Fa
         dana_local_defs = dana_function.find_first("p_local_def_list") \
                                        .multifind(["p_func_def", "p_func_decl", "p_var_def"])
 
+    return dana_args + dana_local_defs
+
+
+def produce_function(dana_function, parent=None, global_table=Table(), is_main=False):
+
+    function = get_function_symbol(dana_function)
+
     local_table = copy(global_table)
-    local_table["$"] = function.type
+    local_table.function = function
 
-
-
-    args = []
-    defs = []
-    decls = []
-    funcs = []
-
-    function = DanaFunction(parent, function, defs, args, block=None)
+    register = dict({"p_var_def" : local_table.extend_defs,
+                     "p_var_decl" : local_table.extend_decls,
+                     "p_var_arg" : local_table.extend_args,
+                     "p_var_func" : local_table.extend_funcs,
+                   })
+    
+    function = DanaFunction(parent, local_table, block=None)
 
     # Main isn't actually a function
     function.is_main = is_main
     if is_main:
         local_table[function.symbol.name] = function.symbol.type
 
-    for local_def in dana_args + dana_local_defs:
+    for local_def in get_function_variables(dana_function):
         symbols = None
         if local_def.name in ["p_func_decl", "p_func_def"]:
-            symbols = [get_function_symbol(local_def.find_first("p_header"))]
-            if local_def.name == "p_func_decl":
-                decls += symbols
-
-            elif local_def.name == "p_func_def":
-                funcs += symbols
-
-                temp_table = copy(global_table)
-                for key in local_table.keys():
-                    temp_table[key] = local_table[key]
-
-                new_function = produce_function(local_def, function, temp_table)
-                function.children.append(new_function)
+            symbols = [get_function_symbol(local_def)]
 
         elif local_def.name in ["p_var_def", "p_fpar_def"]:
             names = map(lambda name: name.value, local_def.find_all("p_name"))
             symbols = [Symbol(name, get_type(local_def)) for name in names]
 
-            if local_def.name == "p_var_def":
-                defs += symbols
-
-            elif local_def.name == "p_fpar_def":
-                args += symbols
-
-
         else:
             raise ValueError("Local definition is not declaration or definition")
 
+
+
         for symbol in symbols:
             if (symbol.name in local_table) and \
-                not (len([x for x in funcs if x.name == symbol.name]) == 1 and \
-                symbol.name in [decl.name for decl in decls]):
+                not (len([x for x in local_table.funcs if x.name == symbol.name]) == 1 and \
+                    symbol.name in [decl.name for decl in local_table.decls]):
                 print("Lines {}: Name {} already defined in current scope"
                       .format(dana_function.linespan, symbol.name))
 
-            local_table[symbol.name] = symbol.type
+        register[local_def.name](symbols)
+
+        if local_def.name == "p_func_def":
+            temp_table = copy(local_table)
+            new_function = produce_function(local_def, function, temp_table)
+            function.children.append(new_function)
+
 
     dana_block = dana_function.find_first_child("p_block")
     function.block = DanaContainer(local_table, dana_block=dana_block)
+
 
     return function
 
 
 
 def produce_program(main_function):
-    global_table = dict()
+    global_table = Table()
     for symbol in builtins:
         global_table[symbol.name] = symbol.type
 

@@ -1,11 +1,21 @@
 class DanaFunction(object):
-    def __init__(self, parent, symbol, defs, args, block):
+    def __init__(self, parent, table, block):
         self.parent = parent
-        self.symbol = symbol
-        self.defs = defs
-        self.args = args
+        self.table = table
         self.block = block
         self.children = []
+
+    @property
+    def symbol(self):
+        return self.table.function
+
+    @property
+    def defs(self):
+        return self.table.defs
+
+    @property
+    def args(self):
+        return self.table.args
 
     def __str__(self):
         ret = "-------{}-------\n".format(str(self.symbol))

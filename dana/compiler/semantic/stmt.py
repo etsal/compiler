@@ -73,7 +73,7 @@ class DanaStmt(object):
 
 
     def verify_ret_stmt(self, stmt, symbol_table):
-        expected_type = DanaType(symbol_table["$"].base)
+        expected_type = DanaType(symbol_table.function.base)
         actual_type = DanaType("void")
 
         dana_expr = stmt.find_first("p_expr")
