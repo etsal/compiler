@@ -1,3 +1,5 @@
+from compiler.semantic.error import *
+
 class DanaType(object):
     """A type of the Dana language."""
 
@@ -16,9 +18,9 @@ class DanaType(object):
     # into an array of set size
     def __init__(self, base, dims=[], args=None, ref=False):
         if base not in self.base_types:
-            raise ValueError("Base type {} invalid".format(base))
+            raise DanaTypeError("Base type {} invalid".format(base))
         if base in ["logic", "void"] and dims != []:
-            raise ValueError("Danatype {} cannot have dimensions {}".format(base, dims))
+            raise DanaTypeError("Danatype {} cannot have dimensions {}".format(base, dims))
 
         self.base = base
         self.dims = dims
@@ -34,6 +36,10 @@ class DanaType(object):
         """
         return self.args is not None
 
+    def is_reference(self):
+        return self.ref
+
+    
 
     def __str__(self):
         result = self.base

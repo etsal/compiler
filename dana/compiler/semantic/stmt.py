@@ -1,106 +1,83 @@
+from compiler.semantic.symbol import Symbol as Symbol
 from compiler.semantic.expr import DanaExpr as DanaExpr
 from compiler.semantic.type import DanaType as DanaType
+from compiler.semantic.error import *
 
 class DanaStmt(object):
-    operators = ["ret", "break", "continue", "call", "assign"]
+    optable = dict({"p_cont_stmt" : "continue",
+                   "p_break_stmt" : "break", 
+                   "p_proc_call" : "call",
+                   "p_ret_stmt" : "ret",
+                   "p_assign_stmt" : "assign",
+                  })
 
-    def __init__(self, dana_stmt, symbol_table):
+
+    def __init__(self, d_stmt, table):
+
+        verify = dict({"p_cont_stmt" : self.verify_labeled,
+                       "p_break_stmt" : self.verify_labeled,
+                       "p_proc_call" : self.verify_call,
+                       "p_ret_stmt" : self.verify_ret,
+                       "p_assign_stmt" : self.verify_assign,
+                      })
+
+        d_child = d_stmt.multifind_first(verify.keys())
+        name = d_child.name
+
         self.value = None
         self.label = None
         self.exprs = []
-        self.operator = None
+        self.operator = self.optable[name]
 
-        dana_stmt_children = dana_stmt.multifind(["p_cont_stmt", "p_break_stmt",
-                                                  "p_proc_call", "p_ret_stmt",
-                                                  "p_assign_stmt"])
-        # Guaranteed to have exactly one child
-        dana_child = dana_stmt_children[0]
-        name = dana_child.name
-
-        if name in ["p_const_stmt", "p_break_stmt"]:
-            self.verify_labeled_stmt(dana_child, symbol_table)
-        elif name == "p_proc_call":
-            self.verify_call_stmt(dana_child, symbol_table)
-        elif name == "p_ret_stmt":
-            self.verify_ret_stmt(dana_child, symbol_table)
-        elif name == "p_assign_stmt":
-            self.verify_assign_stmt(dana_child, symbol_table)
+        verify[name](d_child, table)
 
 
 
-    def verify_labeled_stmt(self, stmt, symbol_table):
-        label = stmt.find_first("p_name")
-        if label:
-            label = label.value
-            if label not in symbol_table:
-                print("Lines {}: Label {} not defined in current scope"
-                      .format(stmt.linespan, label))
-            elif symbol_table[label] != DanaType("label"):
-                print("Lines {}: Symbol {} not not a label".format(stmt.linespan, label))
-
-        operator = None
-        if stmt.name == "p_cont_stmt":
-            operator = "continue"
-        elif stmt.name == "p_break_stmt":
-            operator = "break"
-
-        self.label = label
-        self.operator = operator
+    def verify_labeled(self, d_stmt, table):
+        d_label = d_stmt.find_first("p_name")
+        if d_label:
+            label = Symbol(d_label.value, DanaType("label"))
+            check_table(d_stmt.linespan, label, table)
+            self.label = label.name
 
 
+    def verify_call(self, d_stmt, table):
 
-    def verify_call_stmt(self, stmt, symbol_table):
-        proc_name = stmt.find_first("p_name").value
-        if proc_name not in symbol_table:
-            print("Lines {}: Symbol {} not in scope".format(stmt.linespan, proc_name))
-            return
-
-        dana_exprs = stmt.find_all("p_expr")
-        exprs = [DanaExpr(dana_expr, symbol_table) for dana_expr in dana_exprs]
+        d_exprs = d_stmt.find_all("p_expr")
+        exprs = [DanaExpr.factory(d_expr, table) for d_expr in d_exprs]
         types = [expr.type for expr in exprs]
 
-        expected_type = symbol_table[proc_name] if proc_name in symbol_table \
-                        else DanaType("invalid")
-        actual_type = DanaType("void", args=types)
-        if expected_type != actual_type:
-            print("Lines {}: Proc has type {} but called as {}"
-                  .format(stmt.linespan, str(expected_type), str(actual_type)))
+        proc_name = d_stmt.find_first("p_name").value
+        actual = DanaType("void", args=types)
+        check_table(d_stmt.linespan, Symbol(proc_name, actual), table)
 
         self.value = proc_name
         self.exprs = exprs
-        self.operator = "call"
 
 
 
-    def verify_ret_stmt(self, stmt, symbol_table):
-        expected_type = DanaType(symbol_table.function.base)
-        actual_type = DanaType("void")
+    def verify_ret(self, d_stmt, table):
+        expected = DanaType(table.function.base)
+        actual = DanaType("void")
 
-        dana_expr = stmt.find_first("p_expr")
+        d_expr = d_stmt.find_first("p_expr")
         exprs = []
-        if dana_expr:
-            exprs += [DanaExpr(dana_expr, symbol_table)]
-            actual_type = exprs[0].type
+        if d_expr:
+            exprs += [DanaExpr.factory(d_expr, table)]
+            actual = exprs[0].type
 
-        if expected_type != actual_type:
-            print("Lines {}: Function has type {} but returns {}"
-                  .format(stmt.linespan, expected_type, actual_type))
+        check_type(d_stmt.linespan, expected, actual)
 
         self.exprs = exprs
-        self.operator = "ret"
 
 
 
-    def verify_assign_stmt(self, stmt, symbol_table):
-        lvalue = DanaExpr(stmt.find_first_child("p_lvalue"), symbol_table)
-        expr = DanaExpr(stmt.find_first_child("p_expr"), symbol_table)
+    def verify_assign(self, d_stmt, table):
+        lvalue = DanaExpr.factory(d_stmt.find_first_child("p_lvalue"), table)
+        expr = DanaExpr.factory(d_stmt.find_first_child("p_expr"), table)
 
-        expected_type = lvalue.type
-        actual_type = expr.type
-        if expected_type != actual_type:
-            print("Lines {}: Function has type {} but returns {}"
-                  .format(stmt.linespan, expected_type, actual_type))
-
+        expected = lvalue.type
+        actual = expr.type
+        check_type(d_stmt.linespan, expected, actual)
 
         self.exprs = [lvalue, expr]
-        self.operator = "assign"

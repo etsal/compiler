@@ -1,13 +1,13 @@
 import sys
 from copy import copy
-from collections import deque as deque
 from compiler.parser.lexer import lex as lex, tokens as tokens
 from compiler.parser.parser import parser as parser
 from compiler.semantic.type import DanaType as DanaType
 from compiler.semantic.symbol import Symbol as Symbol
-from compiler.semantic.func import DanaFunction as DanaFunction
 from compiler.semantic.table import Table as Table
+from compiler.semantic.func import DanaFunction as DanaFunction
 from compiler.semantic.block import DanaContainer as DanaContainer
+from compiler.semantic.error import *
 
 builtins = [
     Symbol("writeInteger", DanaType("void", args=[DanaType("int")])),
@@ -31,14 +31,14 @@ builtins = [
 
 #Subtrees: <fpar-type> | <type> | <data-type>
 #Subtree: <type> | "ref" <data-type> | <data-type> "[" "]" ("[" <int-const> "]")*
-def get_type(dana_type):
-    base = dana_type.find_first("p_data_type").value
+def get_type(d_type):
+    base = d_type.find_first("p_data_type").value
 
-    dims = list(const.value for const in  dana_type.find_all("p_number"))
-    if dana_type.find_first("p_empty_brackets"):
+    dims = list(const.value for const in  d_type.find_all("p_number"))
+    if d_type.find_first("p_empty_brackets"):
         dims = [0] + dims
 
-    ref = True if dana_type.find_first("p_ref") else False
+    ref = True if d_type.find_first("p_ref") else False
 
     return DanaType(base, dims=dims, ref=ref)
 
@@ -46,17 +46,17 @@ def get_type(dana_type):
 
 #Subtree: <id> ["is" <data-type>] [":" <fpar-def> (",", <fpar-def>)*]
 # Traverse function header, extracting the type of the function it refers to
-def get_function_symbol(dana_function):
-    dana_header = dana_function.find_first("p_header")
-    name = dana_header.find_first("p_name").value
+def get_function_symbol(d_function):
+    d_header = d_function.find_first("p_header")
+    name = d_header.find_first("p_name").value
 
-    base = dana_header.find_first("p_maybe_data_type").find_first("p_data_type")
+    base = d_header.find_first("p_maybe_data_type").find_first("p_data_type")
     if base:
         base = base.value
     if not base:
         base = "void"
 
-    args = list(map(get_type, dana_header.find_all("p_fpar_def")))
+    args = list(map(get_type, d_header.find_all("p_fpar_def")))
 
     return Symbol(name, DanaType(base, args=args))
 
@@ -64,31 +64,29 @@ def get_function_symbol(dana_function):
 
 #Subtree: (<id>)+ "as" <fpar-type> | "var" (<id>)+ "is" <type>
 # Traverses both p_var_def and p_fpar_def tokens
-def get_variable_symbols(dana_def):
-
-    variables = dana_def.find_first("p_name")
-    var_type = dana_def.find_first("p_dana_type")
-
+def get_variable_symbols(d_def):
+    variables = d_def.find_first("p_name")
+    var_type = d_def.find_first("p_d_type")
     return [Symbol(var, var_type) for var in variables]
 
 
-def get_function_variables(dana_function):
+def get_function_variables(d_function):
     # Find all subtrees with definitions/declarations
-    dana_header = dana_function.find_first("p_header")
-    dana_args = dana_header.find_all("p_fpar_def")
+    d_header = d_function.find_first("p_header")
+    d_args = d_header.find_all("p_fpar_def")
 
-    dana_local_def_list = dana_function.find_first_child("p_local_def_list")
-    dana_local_defs = []
-    if dana_local_def_list:
-        dana_local_defs = dana_function.find_first("p_local_def_list") \
+    d_local_def_list = d_function.find_first_child("p_local_def_list")
+    d_local_defs = []
+    if d_local_def_list:
+        d_local_defs = d_function.find_first("p_local_def_list") \
                                        .multifind(["p_func_def", "p_func_decl", "p_var_def"])
 
-    return dana_args + dana_local_defs
+    return d_args + d_local_defs
 
 
-def produce_function(dana_function, parent=None, global_table=Table(), is_main=False):
+def produce_function(d_function, parent=None, global_table=Table(), is_main=False):
 
-    function = get_function_symbol(dana_function)
+    function = get_function_symbol(d_function)
 
     local_table = copy(global_table)
     local_table.function = function
@@ -106,7 +104,7 @@ def produce_function(dana_function, parent=None, global_table=Table(), is_main=F
     if is_main:
         local_table[function.symbol.name] = function.symbol.type
 
-    for local_def in get_function_variables(dana_function):
+    for local_def in get_function_variables(d_function):
         symbols = None
         if local_def.name in ["p_func_decl", "p_func_def"]:
             symbols = [get_function_symbol(local_def)]
@@ -125,7 +123,7 @@ def produce_function(dana_function, parent=None, global_table=Table(), is_main=F
                 not (len([x for x in local_table.funcs if x.name == symbol.name]) == 1 and \
                     symbol.name in [decl.name for decl in local_table.decls]):
                 print("Lines {}: Name {} already defined in current scope"
-                      .format(dana_function.linespan, symbol.name))
+                      .format(d_function.linespan, symbol.name))
 
         register[local_def.name](symbols)
 
@@ -135,8 +133,8 @@ def produce_function(dana_function, parent=None, global_table=Table(), is_main=F
             function.children.append(new_function)
 
 
-    dana_block = dana_function.find_first_child("p_block")
-    function.block = DanaContainer(local_table, dana_block=dana_block)
+    d_block = d_function.find_first_child("p_block")
+    function.block = DanaContainer(local_table, d_block=d_block)
 
 
     return function
@@ -164,7 +162,7 @@ def test():
 
     ast = yacc.parse(program.read(), tracking=True, debug=False)
     main_function = ast.children[0]
-    function = produce_program(main_function)
+    produce_program(main_function)
 
     return
 

@@ -74,6 +74,22 @@ class Node(object):
         return subtrees
 
 
+    def multifind_first(self, names, only_children=False):
+        subtrees = []
+        unprocessed = deque(self.children)
+        while unprocessed:
+            child = unprocessed.popleft()
+
+            if isinstance(child, str):
+                continue
+
+            elif child.name in names:
+                return child
+
+            elif not only_children:
+                extendleft_no_reverse(unprocessed, child.children)
+
+        return subtrees
 
     def multifind_children(self, names):
         return self.multifind(names, only_children=True)
