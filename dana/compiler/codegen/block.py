@@ -16,6 +16,7 @@ def irgen_block(func, block, table):
 
 
 def irgen_if(func, block, table):
+    """Generate the blocks representing an if-elif*-else? statement"""
     start = func.append_basic_block()
     builder = ir.IRBuilder(start)
     pred = irgen_expr(block.cond, builder, table)
@@ -35,25 +36,20 @@ def irgen_if(func, block, table):
     start.replace(temp, ir.ConditionalBranch(start, "br", [pred, if_blks[0], else_blks[0]]))
     return [start] + if_blks + else_blks 
 
+
          
 def irgen_loop(func, block, table):
-    blks = []
+    """Generate the blocks representing a loop"""
 
-    entry = func.append_basic_block(block.label)
     blks = irgen_block(func, block.block, table)
-
-    entry_builder = ir.IRBuilder(entry)
-    entry_builder.branch(blks[0])
-
-    # In case the last block is unfinished
+    entry = blks[0]
     exit = blks[-1]
+
+    # In case the last block is has an instruction to be patched,
+    # we patch it with a jump to the entry block
     if isinstance(exit.instructions[-1], ir.Unreachable) and \
         exit.instructions[-1] in table.nexts:
         exit.replace(exit.instructions[-1], ir.Branch(exit, "br", [entry])) 
-    else:
-        exit = func.append_basic_block()
-        exit_builder = ir.IRBuilder(exit)
-        exit_builder.branch(entry)
 
     for blk in blks:
         for inst in blk.instructions:
@@ -70,11 +66,34 @@ def irgen_loop(func, block, table):
                     b.replace(inst, ir.Branch(exit, "br", [entry])) 
                     
 
-    return [entry] + blks + [exit]
+    return blks 
 
-        
+
+
+def irgen_basic(func, block, table):
+    """Generate the blocks representing a basic block"""
+    blk = func.append_basic_block()
+    builder = ir.IRBuilder(blk)
+    
+    for stmt in block.stmts:
+        irgen_stmt(stmt, builder, table)
+            
+    # If a block is not explicitly terminated (with a 
+    # terminator instruction), we put a placeholder
+    # to be backpatched into a branch to the next instruction,
+    # thus satisfying LLVM IR constraints (all basic blocks end
+    # with a terminator, and all jumps are done to the _beginning_
+    # of a basic block)
+    if not blk.is_terminated:
+        tmp = builder.unreachable() 
+        table.nexts[tmp] = (builder.block, None)
+
+    return [blk]
+   
+     
 
 def irgen_container(func, block, table):
+    """Generate the blocks representing a sequence of blocks of the other types"""
     blks = []
     children = []
     for child in block.children:
@@ -88,18 +107,3 @@ def irgen_container(func, block, table):
 
     return blks 
     
-
-def irgen_basic(func, block, table):
-    blk = func.append_basic_block()
-    builder = ir.IRBuilder(blk)
-    
-    for stmt in block.stmts:
-        irgen_stmt(stmt, builder, table)
-            
-    if not blk.is_terminated:
-        tmp = builder.unreachable() 
-        table.nexts[tmp] = (builder.block, None)
-
-    return [blk]
-        
-
