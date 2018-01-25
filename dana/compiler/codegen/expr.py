@@ -1,5 +1,6 @@
 from llvmlite import ir as ir
 
+# no_arrays????
 def irtype(dana_type, no_arrays = False):
     ir_base = dict({"int"   : ir.IntType(32),
                     "byte"  : ir.IntType(8),
@@ -9,6 +10,7 @@ def irtype(dana_type, no_arrays = False):
                     })
     t = ir_base[dana_type.base]
     
+    # We choose whether to produce an array type or a pointer type
     for num in dana_type.dims:
         if num and not no_arrays:
             t = ir.ArrayType(t, num)
@@ -20,6 +22,7 @@ def irtype(dana_type, no_arrays = False):
         
     return t
 
+# Multidimensional arrays?
 def irpointer(addr, dana_type, builder):
     if dana_type.dims and any(x for x in dana_type.dims): 
         return builder.bitcast(addr, irtype(dana_type, no_arrays = True))
@@ -27,8 +30,8 @@ def irpointer(addr, dana_type, builder):
         return addr
 
 def irgen_string(string, builder):
-
     string_type = irtype(string.type) 
+
     addr = ir.GlobalVariable(builder.module, string_type, constant_names[string.value])
     addr.global_constant = True 
     addr.initializer = ir.Constant(string_type, bytearray(ord(c) for c in string.value))
@@ -39,22 +42,15 @@ def irgen_string(string, builder):
 
 def irgen_expr(expr, builder, table):
     operator = expr.operator
+    special = dict({"const" : irgen_const,
+                    "call" : irgen_call,
+                    "lvalue" : irgen_rvalue,
+                    "string" : irgen_string,
+                    "id" : irgen_id,
+                   })
 
-    if operator == "const":
-        return ir.Constant(irtype(expr.type), int(expr.value))    
-    elif operator == "call":
-        name = expr.value
-        args = [irgen_expr(arg, builder, table) for arg in expr.children]
-        return builder.call(table.funcs[name], args, name)
-    elif operator == "lvalue":
-        addr = irgen_lvalue(expr, builder, table)
-        return builder.load(addr)
-    elif operator == "string":
-        if not expr.value in constant_names:
-            irgen_string(expr, builder)         
-        return constant_names[expr.value]
-    elif operator == "id": 
-        return irgen_expr(operand, builder, table)
+    if operator in special.keys():
+        return special[operator](expr, builder, table)
 
 
     if len(expr.children) == 1:
@@ -65,6 +61,27 @@ def irgen_expr(expr, builder, table):
         first = irgen_expr(expr.children[0], builder, table)
         second = irgen_expr(expr.children[1], builder, table)
         return irgen_binary(builder, operator, first, second)
+
+
+def irgen_const(expr, builder, table):
+    return ir.Constant(irtype(expr.type), int(expr.value))    
+
+def irgen_call(expr, builder, table):
+    name = expr.value
+    args = [irgen_expr(arg, builder, table) for arg in expr.children]
+    return builder.call(table.funcs[name], args, name)
+
+def irgen_rvalue(expr, builder, table):
+    addr = irgen_lvalue(expr, builder, table)
+    return builder.load(addr)
+
+def irgen_string(expr, builder, table):
+    if not expr.value in constant_names:
+        irgen_string(expr, builder)         
+    return constant_names[expr.value]
+
+def irgen_id(expr, builder, table):
+    return irgen_expr(operand, builder, table)
 
 
 
@@ -110,17 +127,13 @@ def irgen_binary(builder, operator, first, second):
     return operations[operator](first, second)
 
 
-def irgen_lvalue(lvalue, builder, table):
-    #TODO CHANGE FOR STATIC SCOPING
-    addr = None
-    
-    assert lvalue.operator != "string"
 
+def irgen_lvalue(lvalue, builder, table):
+    addr = table[lvalue.value]
     if lvalue.children:
-        child = irgen_lvalue(lvalue.children[0], builder, table)
-        expr = irgen_expr(lvalue.value, builder, table)
-        addr = builder.gep(child, [expr]) 
-    else:
-        return table[lvalue.value]
+        exprs = [irgen_expr(child, builder, table) for child in lvalue.children]
+        for expr in exprs:
+            addr = builder.gep(addr, [expr])
 
     return addr
+

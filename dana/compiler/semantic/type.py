@@ -27,7 +27,6 @@ class DanaType(object):
         self.args = args
         self.ref = ref
 
-
     def is_function(self):
         """Test whether the type is a function type.
            Note that args being None and being [] are
@@ -36,21 +35,27 @@ class DanaType(object):
         """
         return self.args is not None
 
-    def is_reference(self):
+    def is_ref(self):
         return self.ref
-
     
+    def is_pointer(self):
+        return self.dims and self.dims[0] == 0
 
     def __str__(self):
         result = self.base
+        if self.is_ref():
+            result = "ref " + result
+        if self.is_pointer():
+            result += "[]"
         for dim in self.dims:
-            result += "[{}]".format(dim) if dim > 0 else "[]"
+            result += "[{}]".format(dim) 
         if self.args is not None:
             result += "({})".format(", ".join(map(str, self.args)))
         return result
 
     def __eq__(self, other):
         return self.base == other.base and \
+               self.is_pointer() == other.is_pointer() and \
                len(self.dims) == len(other.dims) and \
                self.args == other.args
 

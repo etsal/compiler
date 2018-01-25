@@ -10,7 +10,6 @@ from compiler.codegen.block import irgen_block as irgen_block
 from compiler.codegen.table import Table as Table
 from llvmlite import ir as ir
 
-strings = dict()
 
     
 def irgen_func(function, module, table):

@@ -55,18 +55,14 @@ class DanaExpr(object):
             ret += str(self.value)
         elif num == 1:
             ret += "({} {})".format(self.operator, str(self.children[0]))
-
         elif num == 2:
             ret += "({} {} {})".format(str(self.children[0]), self.operator, str(self.children[1]))
-
         else:
             ret += "~"
-
         return ret
 
 
 class DanaConst(DanaExpr):
-
     def __init__(self, const):
         super().__init__()
         value = const.value
@@ -78,9 +74,6 @@ class DanaConst(DanaExpr):
 
 
 class DanaCall(DanaExpr):
-    ops = ["call"]
-
-
     def __init__(self, d_func_call, table):
         super().__init__()
         name = d_func_call.find_first_child("p_name").value
@@ -104,8 +97,6 @@ class DanaCall(DanaExpr):
 
 
 class DanaUnary(DanaExpr):
-    unary_ops = ["neg", "!", "not"]
-
     def __init__(self, operator, operand, table):
         super().__init__()
         child = DanaExpr.factory(operand, table)
@@ -177,8 +168,6 @@ class DanaBinary(DanaExpr):
 
 
 class DanaLvalue(DanaExpr):
-    lvalue_ops = ["const", "id", "string", "lvalue"]
-
     def __init__(self, d_lvalue, table):
         super().__init__()
 
@@ -189,35 +178,21 @@ class DanaLvalue(DanaExpr):
             return
 
 
-        d_id = d_lvalue.find_first_child("p_name")
-        if d_id:
-            name = d_id.value
-            check_scope(d_lvalue.linespan, name, table)
+        d_id = d_lvalue.find_first("p_name")
+        name = d_id.value
+        check_scope(d_lvalue.linespan, name, table)
 
+        d_exprs = d_lvalue.find_all("p_expr")
+        exprs = [DanaExpr.factory(d_expr, table) for d_expr in d_exprs]
+        for expr in exprs:
+            check_type(d_lvalue.linespan, expr.type, DanaType("int")) 
+                    
+        base = table[name]
+        if len(base.dims) < len(exprs):
+            raise TypeError("Invalid dereferencing")
 
-            self._set_attributes([], table[name], "lvalue", value=name)
-            return
-
-
-        d_expr = d_lvalue.find_first_child("p_expr")
-        if d_expr:
-            expr = DanaExpr.factory(d_expr, table)
-            
-            check_type(d_lvalue.linespan, expr.type, DanaType("int"))
-
-            d_lvalue_child = d_lvalue.find_first_child("p_lvalue")
-            child = DanaExpr.factory(d_lvalue_child, table)
-            if not child.type.dims:
-                print("Lines {}: Base type {} dereferenced" \
-                        .format(d_lvalue_child.linespan, child.type))
-                return
-
-
-            dtype = DanaType(child.type.base, \
-                                 dims=child.type.dims[1:], \
-                                 args=child.type.args)
-            self._set_attributes([child], dtype, "lvalue", value=expr)
-            return
-
-
-
+        dtype = DanaType(base.base, \
+                         dims=base.dims[len(exprs):], \
+                         args=base.args)
+        
+        self._set_attributes(exprs, dtype, "lvalue", value=name)
