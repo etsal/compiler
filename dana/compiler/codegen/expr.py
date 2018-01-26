@@ -37,7 +37,8 @@ def irgen_string(string, builder, table):
         addr.global_constant = True 
         addr.unnamed_addr = True
 
-        addr.initializer = ir.Constant(string_type, bytearray(ord(c) for c in string.value))
+        encoded = bytearray(string.value.encode("ascii"))
+        addr.initializer = ir.Constant(string_type, encoded)
         table.globals[string.value] = addr
 
     else:

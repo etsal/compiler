@@ -1,3 +1,4 @@
+import ast
 from itertools import zip_longest as zip_longest
 from compiler.semantic.type import DanaType as DanaType
 from compiler.semantic.error import *
@@ -173,8 +174,9 @@ class DanaLvalue(DanaExpr):
 
         string = d_lvalue.find_first_child("p_string")
         if string:
-            dtype = DanaType("byte", dims=[len(string.value) + 1])
-            self._set_attributes([], dtype, "string", string.value + '\0')
+            value = ast.literal_eval(string.value) + "\0"
+            dtype = DanaType("byte", dims=[len(value)])
+            self._set_attributes([], dtype, "string", value)
             return
 
 
