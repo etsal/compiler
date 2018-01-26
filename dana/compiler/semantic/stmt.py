@@ -57,7 +57,7 @@ class DanaStmt(object):
 
 
     def verify_ret(self, d_stmt, table):
-        expected = DanaType(table.function.base)
+        expected = DanaType(table.function.type.base)
         actual = DanaType("void")
 
         d_expr = d_stmt.find_first("p_expr")
@@ -79,5 +79,7 @@ class DanaStmt(object):
         expected = lvalue.type
         actual = expr.type
         check_type(d_stmt.linespan, expected, actual)
+        if actual not in [DanaType("int"), DanaType("byte")]:
+            raise DanaTypeError("Assignment to invalid type")
 
         self.exprs = [lvalue, expr]

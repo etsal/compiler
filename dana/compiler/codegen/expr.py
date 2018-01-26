@@ -29,15 +29,22 @@ def irpointer(addr, dana_type, builder):
     else:
         return addr
 
-def irgen_string(string, builder):
-    string_type = irtype(string.type) 
+def irgen_string(string, builder, table):
+    if not string.value in table.globals:
+        string_type = irtype(string.type) 
+        addr = ir.GlobalVariable(builder.module, string_type, table.new_name())
 
-    addr = ir.GlobalVariable(builder.module, string_type, constant_names[string.value])
-    addr.global_constant = True 
-    addr.initializer = ir.Constant(string_type, bytearray(ord(c) for c in string.value))
-    addr.unnamed_addr = True
+        addr.global_constant = True 
+        addr.unnamed_addr = True
 
-    constant_names[expr.value] = irpointer(addr, expr.type, builder)
+        addr.initializer = ir.Constant(string_type, bytearray(ord(c) for c in string.value))
+        table.globals[string.value] = addr
+
+    else:
+        addr = table.globals[string.value]
+
+    return irpointer(addr, string.type, builder)
+
 
 
 def irgen_expr(expr, builder, table):
@@ -55,7 +62,7 @@ def irgen_expr(expr, builder, table):
 
     if len(expr.children) == 1:
         operand = irgen_expr(expr.children[0], builder, table)
-        return irgen_unary(builder, operator, operand, table)
+        return irgen_unary(builder, operator, operand)
 
     else:
         first = irgen_expr(expr.children[0], builder, table)
@@ -74,11 +81,6 @@ def irgen_call(expr, builder, table):
 def irgen_rvalue(expr, builder, table):
     addr = irgen_lvalue(expr, builder, table)
     return builder.load(addr)
-
-def irgen_string(expr, builder, table):
-    if not expr.value in constant_names:
-        irgen_string(expr, builder)         
-    return constant_names[expr.value]
 
 def irgen_id(expr, builder, table):
     return irgen_expr(operand, builder, table)

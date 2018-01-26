@@ -5,12 +5,14 @@ class Table(dict):
         self.defs = [] 
         self.decls = []
         self.funcs = []
+        self.parents = []
+        self.function = None
 
 
     def register(self, symbols):
         for symbol in symbols:
            self[symbol.name] = symbol.type
-
+ 
 
     def extend_decls(self, decls):
         self.decls += decls
@@ -38,6 +40,11 @@ class Table(dict):
         new_table.extend_defs(self.defs)
         new_table.extend_funcs(self.funcs)
         new_table.extend_args(self.args)
+
+        new_table.parent = self.decls + self.defs + self.args
+        # Avoid duplicates
+        new_table.parent += [func for func in self.funcs if not func in self.decls]
+        new_table.function = self.function
 
         for key in self.keys():
             new_table[key] = self[key]

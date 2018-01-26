@@ -93,7 +93,7 @@ class DanaCall(DanaExpr):
                                 [str(t) for t in types], name, [str(t) for t in expected_args]))
 
         dtype = DanaType(table[name].base)
-        self._set_attributes([], dtype, "call", value=name)
+        self._set_attributes(exprs, dtype, "call", value=name)
 
 
 class DanaUnary(DanaExpr):

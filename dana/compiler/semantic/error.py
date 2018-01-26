@@ -5,7 +5,7 @@ class ScopeError(Exception):
     pass
 
 
-def check_type(line, actual, expected):
+def check_type(line, expected, actual):
     if actual != expected:
         raise DanaTypeError("L {}: Expected {}, got {}".format(line, actual, expected))
 
@@ -16,4 +16,4 @@ def check_scope(line, name, table):
 def check_table(line, symbol, table):
     check_scope(line, symbol.name, table)
     expected = table[symbol.name]
-    check_type(line, symbol.type, expected) 
+    check_type(line, expected, symbol.type) 

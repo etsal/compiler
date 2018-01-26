@@ -12,7 +12,7 @@ Return:
 blks -- A sequence of IR blocks
 """
 
-from compiler.codegen.expr import irgen_expr as irgen_expr
+from compiler.codegen.expr import irgen_expr as irgen_expr, irtype as irtype
 from compiler.codegen.stmt import irgen_stmt as irgen_stmt
 from llvmlite import ir as ir
 
@@ -43,6 +43,8 @@ def irgen_if(func, block, table):
 
 
     pred = irgen_expr(block.cond, builder, table)
+    if pred.type == ir.IntType(8):
+        pred = builder.icmp_signed("!=", pred, ir.Constant(ir.IntType(8), 0))
     
     # WIll be patched with a conditional branch to the two paths
     temp = builder.unreachable()    

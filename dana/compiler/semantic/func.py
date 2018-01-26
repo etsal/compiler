@@ -1,3 +1,5 @@
+from compiler.semantic.symbol import Symbol as Symbol
+
 class DanaFunction(object):
     def __init__(self, parent, table, block):
         self.parent = parent
@@ -6,8 +8,20 @@ class DanaFunction(object):
         self.children = []
 
     @property
+    def mangled(self):
+        name = self.symbol.name
+        if self.parent:
+            name = self.parent.mangled.name + "$" + self.symbol.name
+
+        return Symbol(name, self.symbol.type)
+
+    @property
     def symbol(self):
         return self.table.function
+
+    @property
+    def parents(self):
+        return self.table.parents
 
     @property
     def defs(self):

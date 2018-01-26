@@ -39,16 +39,14 @@ class DanaType(object):
         return self.ref
     
     def is_pointer(self):
-        return self.dims and self.dims[0] == 0
+        return len(self.dims) > 0
 
     def __str__(self):
         result = self.base
         if self.is_ref():
             result = "ref " + result
-        if self.is_pointer():
-            result += "[]"
-        for dim in self.dims:
-            result += "[{}]".format(dim) 
+        for dim in self.dims: 
+            result += "[{}]".format(dim) if dim else "[]"
         if self.args is not None:
             result += "({})".format(", ".join(map(str, self.args)))
         return result
@@ -56,8 +54,7 @@ class DanaType(object):
     def __eq__(self, other):
         return self.base == other.base and \
                self.is_pointer() == other.is_pointer() and \
-               len(self.dims) == len(other.dims) and \
-               self.args == other.args
+               len(self.dims) == len(other.dims) 
 
     def __ne__(self, other):
         return not self.__eq__(other)

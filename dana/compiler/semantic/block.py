@@ -24,14 +24,14 @@ class DanaBlock(object):
 
 
 class DanaBasic(DanaBlock):
-    def __init__(self, symbol_table, d_stmts):
+    def __init__(self, table, d_stmts):
         super().__init__()
         self.type = "basic"
-        self.stmts = [DanaStmt(d_stmt, symbol_table) for d_stmt in d_stmts]
+        self.stmts = [DanaStmt(d_stmt, table) for d_stmt in d_stmts]
 
 
 class DanaLoop(DanaBlock):
-    def __init__(self, symbol_table, d_stmt):
+    def __init__(self, table, d_stmt):
         super().__init__()
         self.type = "loop"
         self.label = ""
@@ -39,7 +39,7 @@ class DanaLoop(DanaBlock):
         if d_label:
             self.label = d_label.value
 
-        local_table = copy(symbol_table)
+        local_table = copy(table)
         local_table[self.label] = DanaType("label")
 
         d_block = d_stmt.find_first_child("p_block")
@@ -48,31 +48,31 @@ class DanaLoop(DanaBlock):
 
 class DanaIf(DanaBlock):
 
-    def __init__(self, symbol_table, d_stmt):
+    def __init__(self, table, d_stmt):
         super().__init__()
         self.type = "if"
         d_cond = d_stmt.find_first_child("p_cond")
-        self.cond = DanaExpr.factory(d_cond, symbol_table)
+        self.cond = DanaExpr.factory(d_cond, table)
 
         d_block_if = d_stmt.find_first_child("p_block")
-        self.if_path = DanaContainer(symbol_table, d_block=d_block_if)
+        self.if_path = DanaContainer(table, d_block=d_block_if)
         self.else_path = None
 
         d_elif = d_stmt.find_first_child("p_elif_chain")
         if d_elif:
             if d_elif.find_first_child("p_cond"):
                 self.else_path = \
-                    DanaIf(symbol_table, d_stmt=d_elif)
+                    DanaIf(table, d_stmt=d_elif)
             else:
 
                 d_block = d_elif.find_first_child("p_block")
                 self.else_path = \
-                    DanaContainer(symbol_table, d_block=d_block)
+                    DanaContainer(table, d_block=d_block)
 
 
 
 class DanaContainer(DanaBlock):
-    def __init__(self, symbol_table, d_block):
+    def __init__(self, table, d_block):
         super().__init__()
         self.type = "container"
         basic_block = []
@@ -86,27 +86,27 @@ class DanaContainer(DanaBlock):
                 if basic_block:
                     d_stmts_children = [d_stmt for d_stmt in basic_block]
                     self.children += \
-                        [DanaBasic(symbol_table, d_stmts=d_stmts_children)]
+                        [DanaBasic(table, d_stmts=d_stmts_children)]
                     basic_block = []
 
                 d_loop_stmt = d_stmt.find_first_child("p_loop_stmt")
                 d_if_stmt = d_stmt.find_first_child("p_if_stmt")
                 d_terminator_stmt = d_stmt.multifind_children(["p_continue_stmt", "p_ret_stmt", "p_break_stmt"])
                 if d_loop_stmt:
-                    self.children += [DanaLoop(symbol_table, d_stmt=d_loop_stmt)]
+                    self.children += [DanaLoop(table, d_stmt=d_loop_stmt)]
 
                 elif d_if_stmt:
-                    self.children += [DanaIf(symbol_table, d_stmt=d_if_stmt)]
+                    self.children += [DanaIf(table, d_stmt=d_if_stmt)]
 
                 elif d_terminator_stmt:
                     basic_block.append(d_stmt)
                     d_stmts_children = [d_stmt for d_stmt in basic_block]
                     self.children += \
-                        [DanaBasic(symbol_table, d_stmts=d_stmts_children)]
+                        [DanaBasic(table, d_stmts=d_stmts_children)]
                     basic_block = []
 
         if basic_block:
             d_stmts_children = [d_stmt for d_stmt in basic_block]
             self.children += \
-                [DanaBasic(symbol_table, d_stmts=d_stmts_children)]
+                [DanaBasic(table, d_stmts=d_stmts_children)]
             basic_block = []

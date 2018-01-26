@@ -5,14 +5,15 @@ class Table(dict):
         self.breaks = dict()
         self.conts = dict()
         self.nexts = dict()
+        self.globals = dict()
+        self.access_link = 0
+        self.offset = 0
+        self.counter = 0
+        self.mangled = dict()
 
 
-    def __copy__(self):
-        new_table = Table() 
 
-        new_table.funcs = copy(self.funcs)
-
-        for key in self.keys():
-            new_table[key] = self[key]
-
-        return new_table
+    def new_name(self):
+        name = "str" + str(self.counter)
+        self.counter += 1
+        return name

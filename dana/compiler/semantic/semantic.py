@@ -86,23 +86,29 @@ def get_function_variables(d_function):
 
 def produce_function(d_function, parent=None, global_table=Table(), is_main=False):
 
-    function = get_function_symbol(d_function)
+    function_symbol = get_function_symbol(d_function)
 
     local_table = copy(global_table)
-    local_table.function = function
+    local_table.function = function_symbol
 
     register = dict({"p_var_def" : local_table.extend_defs,
-                     "p_var_decl" : local_table.extend_decls,
-                     "p_var_arg" : local_table.extend_args,
-                     "p_var_func" : local_table.extend_funcs,
+                     "p_fpar_def" : local_table.extend_args,
+                     "p_func_def" : local_table.extend_funcs,
+                     "p_func_decl" : local_table.extend_decls,
                    })
     
+    stype = dict({"p_var_def" : "def", 
+                  "p_fpar_def" : "arg", 
+                  "p_func_def" : "func",
+                  "p_func_decl" : "decl",
+                })
+
     function = DanaFunction(parent, local_table, block=None)
 
     # Main isn't actually a function
     function.is_main = is_main
-    if is_main:
-        local_table[function.symbol.name] = function.symbol.type
+    if not is_main:
+        local_table[function_symbol.name] = function_symbol.type
 
     for local_def in get_function_variables(d_function):
         symbols = None
@@ -115,7 +121,6 @@ def produce_function(d_function, parent=None, global_table=Table(), is_main=Fals
 
         else:
             raise ValueError("Local definition is not declaration or definition")
-
 
 
         for symbol in symbols:
@@ -136,13 +141,13 @@ def produce_function(d_function, parent=None, global_table=Table(), is_main=Fals
     d_block = d_function.find_first_child("p_block")
     function.block = DanaContainer(local_table, d_block=d_block)
 
-
     return function
 
 
 
 def produce_program(main_function):
     global_table = Table()
+    global_table.function = (None, DanaType("void"))
     for symbol in builtins:
         global_table[symbol.name] = symbol.type
 
