@@ -1,0 +1,211 @@
+; ModuleID = ""
+target triple = "x86_64-linux-gnu"
+target datalayout = ""
+
+declare void @"writeInteger"(i32 %".1") 
+
+declare void @"writeByte"(i8 %".1") 
+
+declare void @"writeChar"(i8 %".1") 
+
+declare void @"writeString"(i8* %".1") 
+
+declare i32 @"readInteger"() 
+
+declare i8 @"readByte"() 
+
+declare i8 @"readChar"() 
+
+declare void @"readString"(i32 %".1", i8* %".2") 
+
+declare i32 @"strlen"(i8* %".1") 
+
+declare i32 @"strcmp"(i8* %".1", i8* %".2") 
+
+declare i8 @"strcat"(i8* %".1", i8* %".2") 
+
+declare i8 @"strcpy"(i8* %".1", i8* %".2") 
+
+declare i32 @"extend"(i8 %".1") 
+
+declare i8 @"shrink"(i32 %".1") 
+
+declare void @"exit"(i8 %".1") 
+
+define void @"main"() 
+{
+entry:
+  %".2" = alloca i32
+  %".3" = alloca i32
+  %".4" = alloca [16 x i32]
+  %".5" = bitcast [16 x i32]* %".4" to i32*
+  br label %".7"
+.7:
+  store i32 65, i32* %".2"
+  store i32 0, i32* %".3"
+  br label %".11"
+.11:
+  %".12" = load i32, i32* %".3"
+  %".13" = icmp slt i32 %".12", 16
+  br i1 %".13", label %".15", label %".31"
+.15:
+  %".16" = load i32, i32* %".2"
+  %".17" = mul i32 %".16", 137
+  %".18" = add i32 %".17", 220
+  %".19" = load i32, i32* %".3"
+  %".20" = add i32 %".18", %".19"
+  %".21" = srem i32 %".20", 101
+  store i32 %".21", i32* %".2"
+  %".23" = load i32, i32* %".3"
+  %".24" = getelementptr i32, i32* %".5", i32 %".23"
+  %".25" = load i32, i32* %".2"
+  store i32 %".25", i32* %".24"
+  %".27" = load i32, i32* %".3"
+  %".28" = add i32 %".27", 1
+  store i32 %".28", i32* %".3"
+  br label %".11"
+.31:
+  br label %".36"
+.36:
+  %".37" = bitcast [16 x i8]* @"str2" to i8*
+  %".38" = load i32, i32* %".5"
+  call void @"main$writeArray"(i8* %".37", i32 16, i32* %".5")
+  %".40" = load i32, i32* %".5"
+  call void @"main$bsort"(i32 16, i32* %".5")
+  %".42" = bitcast [15 x i8]* @"str3" to i8*
+  %".43" = load i32, i32* %".5"
+  call void @"main$writeArray"(i8* %".42", i32 16, i32* %".5")
+  br label %"exit"
+exit:
+  call void @"exit"(i8 0)
+  ret void
+}
+
+define void @"main$bsort"(i32 %"n", i32* %"x") 
+{
+entry:
+  %".4" = alloca i8
+  %".5" = alloca i32
+  %".6" = alloca i32
+  store i32 %"n", i32* %".6"
+  br label %".9"
+.9:
+  store i8 0, i8* %".4"
+  store i32 0, i32* %".5"
+  br label %".13"
+.13:
+  %".14" = load i32, i32* %".5"
+  %".15" = load i32, i32* %".6"
+  %".16" = sub i32 %".15", 1
+  %".17" = icmp slt i32 %".14", %".16"
+  br i1 %".17", label %".19", label %".50"
+.19:
+  %".20" = load i32, i32* %".5"
+  %".21" = getelementptr i32, i32* %"x", i32 %".20"
+  %".22" = load i32, i32* %".21"
+  %".23" = load i32, i32* %".5"
+  %".24" = add i32 %".23", 1
+  %".25" = getelementptr i32, i32* %"x", i32 %".24"
+  %".26" = load i32, i32* %".25"
+  %".27" = icmp sgt i32 %".22", %".26"
+  br i1 %".27", label %".29", label %".40"
+.29:
+  %".30" = load i32, i32* %".5"
+  %".31" = getelementptr i32, i32* %"x", i32 %".30"
+  %".32" = load i32, i32* %".31"
+  %".33" = load i32, i32* %".5"
+  %".34" = add i32 %".33", 1
+  %".35" = getelementptr i32, i32* %"x", i32 %".34"
+  %".36" = load i32, i32* %".35"
+  call void @"main$bsort$swap"(i32* %".31", i32* %".35")
+  store i8 1, i8* %".4"
+  br label %".43"
+.40:
+  br label %".43"
+.43:
+  %".44" = load i32, i32* %".5"
+  %".45" = add i32 %".44", 1
+  store i32 %".45", i32* %".5"
+  br label %".13"
+.50:
+  br label %".55"
+.55:
+  %".56" = load i8, i8* %".4"
+  %".57" = xor i8 %".56", -1
+  %".58" = icmp ne i8 %".57", 0
+  br i1 %".58", label %".60", label %".62"
+.60:
+  br label %"exit"
+.62:
+  br label %".9"
+exit:
+  ret void
+}
+
+define void @"main$bsort$swap"(i32* %"x", i32* %"y") 
+{
+entry:
+  %".4" = alloca i32
+  br label %".6"
+.6:
+  %".7" = load i32, i32* %"x"
+  store i32 %".7", i32* %".4"
+  %".9" = load i32, i32* %"y"
+  store i32 %".9", i32* %"x"
+  %".11" = load i32, i32* %".4"
+  store i32 %".11", i32* %"y"
+  br label %"exit"
+exit:
+  ret void
+}
+
+define void @"main$writeArray"(i8* %"msg", i32 %"n", i32* %"x") 
+{
+entry:
+  %".5" = alloca i32
+  %".6" = alloca i32
+  store i32 %"n", i32* %".6"
+  br label %".9"
+.9:
+  %".10" = load i8, i8* %"msg"
+  call void @"writeString"(i8* %"msg")
+  store i32 0, i32* %".5"
+  br label %".14"
+.14:
+  %".15" = load i32, i32* %".5"
+  %".16" = load i32, i32* %".6"
+  %".17" = icmp slt i32 %".15", %".16"
+  br i1 %".17", label %".19", label %".41"
+.19:
+  %".20" = load i32, i32* %".5"
+  %".21" = icmp sgt i32 %".20", 0
+  br i1 %".21", label %".23", label %".27"
+.23:
+  %".24" = bitcast [3 x i8]* @"str0" to i8*
+  call void @"writeString"(i8* %".24")
+  br label %".30"
+.27:
+  br label %".30"
+.30:
+  %".31" = load i32, i32* %".5"
+  %".32" = getelementptr i32, i32* %"x", i32 %".31"
+  %".33" = load i32, i32* %".32"
+  call void @"writeInteger"(i32 %".33")
+  %".35" = load i32, i32* %".5"
+  %".36" = add i32 %".35", 1
+  store i32 %".36", i32* %".5"
+  br label %".14"
+.41:
+  br label %".46"
+.46:
+  %".47" = bitcast [2 x i8]* @"str1" to i8*
+  call void @"writeString"(i8* %".47")
+  br label %"exit"
+exit:
+  ret void
+}
+
+@"str0" = unnamed_addr constant [3 x i8] c", \00"
+@"str1" = unnamed_addr constant [2 x i8] c"\0a\00"
+@"str2" = unnamed_addr constant [16 x i8] c"Initial array: \00"
+@"str3" = unnamed_addr constant [15 x i8] c"Sorted array: \00"

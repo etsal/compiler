@@ -4,62 +4,161 @@ from collections import deque as deque
 from compiler.parser.lexer import lex as lex, tokens as tokens
 from compiler.parser.parser import parser as parser
 from compiler.semantic.semantic import produce_program as produce_program
+from compiler.semantic.symbol import Symbol as Symbol 
 from compiler.semantic.type import DanaType as DanaType
 from compiler.semantic.semantic import builtins as builtins
+from compiler.codegen.type import irtype as irtype 
 from compiler.codegen.expr import *
 from compiler.codegen.block import irgen_block as irgen_block, backpatch as backpatch
-from compiler.codegen.table import Table as Table
+from compiler.codegen.table import *
 from llvmlite import ir as ir
 
-def irgen_extern(module, symbol, table):
-    name = symbol.name
-    fnty = irtype(symbol.type)
-    func = ir.Function(module, fnty, name=name)
-    table.funcs[name] = func
+def irgen_decl(module, symbol, mangled, table):
+    # Only base return types allowed, so we just use the base
+    base = irtype(symbol.type.base)
+
+    # Turn all array arguments to pointers
+    argtypes = [irtype(arg.base, len(arg.dims) + arg.pdepth, []) \
+                    for arg in symbol.type.args]
+    # If passed by reference, we turn it into a pointer type
+    for i, arg in enumerate(symbol.type.args):
+        if arg.is_ref:
+            argtypes[i] = ir.PointerType(argtypes[i])
+    fnty = ir.FunctionType(base, argtypes)
+    func = ir.Function(module, fnty, name=mangled.name)
+
+    # Add relevant entries in the global and local tables
+    table.mangles[symbol.name] = mangled.name 
+    # Incomplete entry in case there are extra args
+    table.funcs[mangled.name]= FuncInfo(func, [])
+
+    return func
+
+def irgen_def(module, function, table):
+
+    # We have a variety of options on how to access variables from
+    # upper scopes; the solution we choose is the one of llvm-gcc - 
+    # pass the needed variables as arguments (llvm-gcc passes a struct,
+    # but that is not a big difference)
+    extra_args = list(function.table.referenced)
+    extra_types = list(function.table[arg] for arg in extra_args)
+    
+    # All items from outer scopes are passed by reference
+    for extra_type in extra_types:
+        if not extra_type.is_array and not extra_type.is_pointer:
+            extra_type.is_ref = True
+    
+    function.symbol.type.args += extra_types
+    function.table.extend_args([Symbol(arg, t) for arg,t in zip(extra_args, extra_types)])
+
+    func = irgen_decl(module, function.symbol, function.mangled, table)
+
+    # Get all upper-scoped variables, turn arrays to pointers
+    dtype = function.mangled.type
+    argtypes = [function.table[arg] for arg in extra_args]
+    dtype.args += argtypes
 
 
-def irgen_decl(module, function, table):
-    fnty = irtype(function.symbol.type)
-    func = ir.Function(module, fnty, name=function.mangled.name)
+    # Name the arguments for more readable IR (at least at first)
+    for arg, name in zip(func.args, function.args + extra_args):
+        arg.name = name
 
-    table.funcs[function.symbol.name] = func
+
+    # Fix the incomplete entry
+    mangled = function.mangled.name
+    table.funcs[mangled]= FuncInfo(func, extra_args)
+    table.current = mangled
+
     return func
        
 
-def irgen_args(function, builder, table):
-    addrs = []
-    for symbol in function.args:
-        addr = irpointer(builder.alloca(irtype(symbol.type)), symbol.type, builder)
-        table[symbol.name] = addr
-        addrs.append(addr)
-    return addrs
+# We fix this, we re done
+# Pointers _always_ before array dimensions, there are no arrays
+# of dimensionless pointers
+def irarray(builder, dtype):
+    base = dtype.base
+    dims = dtype.dims
+    depth = dtype.pointer_depth
+    if len(dims) > 1:
+        # Get types of the outer array
+        arrlen, *rest = dims
+        arrtyp = irtype(base, len(rest), [arrlen])
+        arraddr = builder.alloca(arrtyp)
+        arraddr = builder.bitcast(arraddr, pointer(base, len(dims), 0))
+        # Build the inner arrays
+        for i in range(arrlen):
+            addr = irarray(builder, base, rest)
+            staddr = builder.gep(arraddr, [ir.Constant(ir.IntType(32), i)])
+            builder.store(addr, staddr)
+        return arraddr 
+    # Simple array
+    elif dims:
+        # Just allocate a variable
+        base = irtype(base) 
+        size = dims[0]
+        arrtyp = ir.ArrayType(base, size)
+        arraddr = builder.alloca(arrtyp)    
+        addr = builder.bitcast(arraddr, ir.PointerType(base))
+        return addr
+    else:
+        arrtyp = irbase(base)
+        return builder.alloca(arrtyp)
+    
 
-def irgen_defs(function, builder, table):
-    for symbol in function.defs:
-        # We may allocate an array type, but we always use a pointer type
-        addr = irpointer(builder.alloca(irtype(symbol.type)), symbol.type, builder)
-        table[symbol.name] = addr
+
+def irdef(dtype, builder):
+    if not dtype.is_array:
+        arrtyp = irtype(dtype.base)
+        return builder.alloca(arrtyp)
+
+    if len(dtype.dims) == 1:
+        base = irtype(dtype.base) 
+        size = dtype.dims[0]
+        arrtyp = ir.ArrayType(base, size)
+        addr = builder.alloca(arrtyp)    
+        return builder.bitcast(addr, ir.PointerType(base))
+
+    #WRONG  _____________------------__________ FIXME
+    # Else we're dealing with a multidimensional array
+    arrlen, *rest = dims
+    arrtyp = pointer(base, len(rest), arrlen)
+    arraddr = builder.alloca(arrtyp)
+    arraddr = builder.bitcast(arraddr, pointer(base, len(dims), 0))
+    # Build the inner arrays
+    for i in range(arrlen):
+        addr = irarray(builder, base, rest)
+        staddr = builder.gep(arraddr, [ir.Constant(ir.IntType(32), i)])
+        builder.store(addr, staddr)
+    
+    return arraddr
+
+def irarg(arg, dtype, builder):
+    func = builder.function
+
+    if dtype.is_pointer or dtype.is_array or dtype.is_ref:
+        return arg
+
+    arrtyp = irtype(dtype.base)
+    addr = builder.alloca(arrtyp)
+    builder.store(arg, addr)
+    return addr
+    
 
 
 def irgen_entry(func, function, table):
     # Entry block, where the allocations/initializations are
     entry = func.append_basic_block(name="entry")
     entry_builder = ir.IRBuilder(entry)
-            
-    
 
-    irgen_defs(function, entry_builder, table)
-    addrs = irgen_args(function, entry_builder, table)
-    for arg, addr in zip(func.args, addrs):
-        entry_builder.store(arg, addr) 
+    for ddef in function.defs: 
+        table[ddef] = irdef(function.table[ddef], entry_builder) 
+
+    for darg, arg in zip(function.args, func.args):
+        table[darg] = irarg(arg, function.table[darg], entry_builder)
 
     entry_builder.unreachable()
-
-    # Name the arguments for more readable IR (at least at first)
-    for arg, name in zip(func.args, [symbol.name for symbol in function.args]):
-        arg.name = name
-
     return entry
+
 
 def irgen_exit(func, function, table):
     exit = func.append_basic_block(name="exit")
@@ -69,7 +168,7 @@ def irgen_exit(func, function, table):
     # be able to terminate properly - we do not have support routines like
     # crto0, so we make our own
     if function.is_main:
-        exit_builder.call(table.funcs["exit"], [ir.Constant(ir.IntType(8), 0)])
+        exit_builder.call(table.funcs["exit"].func, [ir.Constant(ir.IntType(8), 0)])
 
     if DanaType(function.symbol.type.base) == DanaType("void"):
     # Never reached for main, but used in void functions 
@@ -79,27 +178,21 @@ def irgen_exit(func, function, table):
 
     return exit
 
+
+
 def child_table(function, table):
-    new_table = Table()
-
-    for name in function.parents:
-        new_table[name] = table[name]
-
-    new_table.funcs = copy(table.funcs)
-    new_table.globals = copy(table.globals)
-    new_table.counter = table.counter 
-
+    new_table = AddressTable(table.gtable)
+    new_table.mangles = copy(table.mangles)
     return new_table
 
 
 def irgen_func(module, function, table):
-    func = irgen_decl(module, function, table)
+    func = irgen_def(module, function, table)
 
     for child in function.children:
+        table.mangles[child.symbol.name] = child.mangled.name 
         new_table = child_table(child, table)
         child_func = irgen_func(module, child, new_table)
-        table.funcs[child.symbol.name] = child_func
-        table.counter = new_table.counter
 
 
     entry = irgen_entry(func, function, table)
@@ -124,11 +217,12 @@ def irgen_func(module, function, table):
 def irgen(main): 
     module = ir.Module()
     module.triple = "x86_64-linux-gnu"
-    table = Table()
+
+    gtable = GlobalTable()
+    table = AddressTable(gtable)
     # Builtin declarations to be linked
     for builtin in builtins:
-        irgen_extern(module, builtin, table)
-
+        irgen_decl(module, builtin, builtin, table)
 
     irgen_func(module, main, table)
     

@@ -1,0 +1,115 @@
+; ModuleID = ""
+target triple = "x86_64-linux-gnu"
+target datalayout = ""
+
+declare void @"writeInteger"(i32 %".1") 
+
+declare void @"writeByte"(i8 %".1") 
+
+declare void @"writeChar"(i8 %".1") 
+
+declare void @"writeString"(i8* %".1") 
+
+declare i32 @"readInteger"() 
+
+declare i8 @"readByte"() 
+
+declare i8 @"readChar"() 
+
+declare void @"readString"(i32 %".1", i8* %".2") 
+
+declare i32 @"strlen"(i8* %".1") 
+
+declare i32 @"strcmp"(i8* %".1", i8* %".2") 
+
+declare i8 @"strcat"(i8* %".1", i8* %".2") 
+
+declare i8 @"strcpy"(i8* %".1", i8* %".2") 
+
+declare i32 @"extend"(i8 %".1") 
+
+declare i8 @"shrink"(i32 %".1") 
+
+declare void @"exit"(i8 %".1") 
+
+define void @"solve"() 
+{
+entry:
+  %".2" = alloca i32
+  br label %".4"
+.4:
+  %".5" = bitcast [8 x i8]* @"str3" to i8*
+  call void @"writeString"(i8* %".5")
+  %".7" = call i32 @"readInteger"()
+  store i32 %".7", i32* %".2"
+  %".9" = load i32, i32* %".2"
+  %".10" = bitcast [5 x i8]* @"str4" to i8*
+  %".11" = bitcast [6 x i8]* @"str5" to i8*
+  %".12" = bitcast [7 x i8]* @"str6" to i8*
+  call void @"solve$hanoi"(i32 %".9", i8* %".10", i8* %".11", i8* %".12")
+  br label %"exit"
+exit:
+  call void @"exit"(i8 0)
+  ret void
+}
+
+define void @"solve$hanoi"(i32 %"rings", i8* %"source", i8* %"target", i8* %"auxiliary") 
+{
+entry:
+  %".6" = alloca i32
+  store i32 %"rings", i32* %".6"
+  br label %".9"
+.9:
+  %".10" = load i32, i32* %".6"
+  %".11" = icmp sge i32 %".10", 1
+  br i1 %".11", label %".13", label %".30"
+.13:
+  %".14" = load i32, i32* %".6"
+  %".15" = sub i32 %".14", 1
+  %".16" = load i8, i8* %"source"
+  %".17" = load i8, i8* %"auxiliary"
+  %".18" = load i8, i8* %"target"
+  call void @"solve$hanoi"(i32 %".15", i8* %"source", i8* %"auxiliary", i8* %"target")
+  %".20" = load i8, i8* %"source"
+  %".21" = load i8, i8* %"target"
+  call void @"solve$hanoi$move"(i8* %"source", i8* %"target")
+  %".23" = load i32, i32* %".6"
+  %".24" = sub i32 %".23", 1
+  %".25" = load i8, i8* %"auxiliary"
+  %".26" = load i8, i8* %"target"
+  %".27" = load i8, i8* %"source"
+  call void @"solve$hanoi"(i32 %".24", i8* %"auxiliary", i8* %"target", i8* %"source")
+  br label %"exit"
+.30:
+  br label %"exit"
+exit:
+  ret void
+}
+
+define void @"solve$hanoi$move"(i8* %"source", i8* %"target") 
+{
+entry:
+  br label %".5"
+.5:
+  %".6" = bitcast [13 x i8]* @"str0" to i8*
+  call void @"writeString"(i8* %".6")
+  %".8" = load i8, i8* %"source"
+  call void @"writeString"(i8* %"source")
+  %".10" = bitcast [5 x i8]* @"str1" to i8*
+  call void @"writeString"(i8* %".10")
+  %".12" = load i8, i8* %"target"
+  call void @"writeString"(i8* %"target")
+  %".14" = bitcast [3 x i8]* @"str2" to i8*
+  call void @"writeString"(i8* %".14")
+  br label %"exit"
+exit:
+  ret void
+}
+
+@"str0" = unnamed_addr constant [13 x i8] c"Moving from \00"
+@"str1" = unnamed_addr constant [5 x i8] c" to \00"
+@"str2" = unnamed_addr constant [3 x i8] c".\0a\00"
+@"str3" = unnamed_addr constant [8 x i8] c"Rings: \00"
+@"str4" = unnamed_addr constant [5 x i8] c"left\00"
+@"str5" = unnamed_addr constant [6 x i8] c"right\00"
+@"str6" = unnamed_addr constant [7 x i8] c"middle\00"

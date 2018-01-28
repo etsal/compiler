@@ -1,0 +1,81 @@
+def main
+    def bsort: n as int, x as int []
+        def swap: x y as ref int
+            var t is int
+            begin
+            t := x
+            x := y
+            y := t
+            end
+
+        var changed is byte 
+        var i is int
+
+        begin
+        loop:
+            begin
+            changed := false
+            i := 0
+            loop:
+                begin
+                if i < n-1:
+                    begin
+                    if x[i] > x[i+1]:
+                        begin
+                        swap: x[i], x[i+1]
+                        changed := true
+                        end
+                    i := i + 1
+                    end
+                else: begin break end
+                end
+                if not changed: begin break end
+            end
+        end
+
+    
+    def writeArray: msg as byte [], n as int, x as int []
+        var i is int
+
+        begin
+        writeString: msg
+        i := 0
+        loop:
+            begin
+            if i < n:
+                begin
+                    if i > 0: 
+                        begin
+                        writeString: ", " 
+                        end
+                    writeInteger: x[i]
+                    i := i + 1
+                end
+            else: begin break end
+            end
+        writeString: "\n"
+        end
+
+
+    var seed i is int
+    var x is int[16]
+
+    begin
+    seed := 65
+    i := 0
+    loop:
+        begin
+        if i < 16:
+            begin
+            seed := (seed * 137 + 220 + i) % 101
+            x[i] := seed
+            i := i + 1
+            end
+        else: begin break end
+        end
+    writeArray: "Initial array: ", 16, x
+    bsort: 16, x
+    writeArray: "Sorted array: ", 16, x
+    end
+
+

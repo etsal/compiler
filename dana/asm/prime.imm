@@ -1,0 +1,211 @@
+; ModuleID = ""
+target triple = "x86_64-linux-gnu"
+target datalayout = ""
+
+declare void @"writeInteger"(i32 %".1") 
+
+declare void @"writeByte"(i8 %".1") 
+
+declare void @"writeChar"(i8 %".1") 
+
+declare void @"writeString"(i8* %".1") 
+
+declare i32 @"readInteger"() 
+
+declare i8 @"readByte"() 
+
+declare i8 @"readChar"() 
+
+declare void @"readString"(i32 %".1", i8* %".2") 
+
+declare i32 @"strlen"(i8* %".1") 
+
+declare i32 @"strcmp"(i8* %".1", i8* %".2") 
+
+declare i8 @"strcat"(i8* %".1", i8* %".2") 
+
+declare i8 @"strcpy"(i8* %".1", i8* %".2") 
+
+declare i32 @"extend"(i8 %".1") 
+
+declare i8 @"shrink"(i32 %".1") 
+
+declare void @"exit"(i8 %".1") 
+
+define void @"main"() 
+{
+entry:
+  %".2" = alloca i32
+  %".3" = alloca i32
+  %".4" = alloca i32
+  br label %".6"
+.6:
+  %".7" = bitcast [8 x i8]* @"str0" to i8*
+  call void @"writeString"(i8* %".7")
+  %".9" = call i32 @"readInteger"()
+  store i32 %".9", i32* %".2"
+  %".11" = bitcast [9 x i8]* @"str1" to i8*
+  call void @"writeString"(i8* %".11")
+  store i32 0, i32* %".4"
+  br label %".15"
+.15:
+  %".16" = load i32, i32* %".2"
+  %".17" = icmp sge i32 %".16", 2
+  br i1 %".17", label %".19", label %".27"
+.19:
+  %".20" = load i32, i32* %".4"
+  %".21" = add i32 %".20", 1
+  store i32 %".21", i32* %".4"
+  call void @"writeInteger"(i32 2)
+  %".24" = bitcast [2 x i8]* @"str2" to i8*
+  call void @"writeString"(i8* %".24")
+  br label %".31"
+.27:
+  br label %".31"
+.31:
+  %".32" = load i32, i32* %".2"
+  %".33" = icmp sge i32 %".32", 3
+  br i1 %".33", label %".35", label %".43"
+.35:
+  %".36" = load i32, i32* %".4"
+  %".37" = add i32 %".36", 1
+  store i32 %".37", i32* %".4"
+  call void @"writeInteger"(i32 3)
+  %".40" = bitcast [2 x i8]* @"str2" to i8*
+  call void @"writeString"(i8* %".40")
+  br label %".48"
+.43:
+  br label %".48"
+.48:
+  store i32 5, i32* %".3"
+  br label %".53"
+.53:
+  %".54" = load i32, i32* %".3"
+  %".55" = load i32, i32* %".2"
+  %".56" = icmp sgt i32 %".54", %".55"
+  br i1 %".56", label %".58", label %".60"
+.58:
+  br label %".133"
+.60:
+  br label %".63"
+.63:
+  %".64" = load i32, i32* %".3"
+  %".65" = load i32, i32* %".2"
+  %".66" = icmp sgt i32 %".64", %".65"
+  br i1 %".66", label %".68", label %".70"
+.68:
+  br label %".53"
+.70:
+  %".71" = load i32, i32* %".3"
+  %".72" = call i8 @"main$prime"(i32 %".71")
+  %".73" = icmp ne i8 %".72", 0
+  br i1 %".73", label %".75", label %".84"
+.75:
+  %".76" = load i32, i32* %".4"
+  %".77" = add i32 %".76", 1
+  store i32 %".77", i32* %".4"
+  %".79" = load i32, i32* %".3"
+  call void @"writeInteger"(i32 %".79")
+  %".81" = bitcast [2 x i8]* @"str2" to i8*
+  call void @"writeString"(i8* %".81")
+  br label %".88"
+.84:
+  br label %".88"
+.88:
+  %".89" = load i32, i32* %".3"
+  %".90" = add i32 %".89", 2
+  store i32 %".90", i32* %".3"
+  br label %".95"
+.95:
+  %".96" = load i32, i32* %".3"
+  %".97" = load i32, i32* %".2"
+  %".98" = icmp sgt i32 %".96", %".97"
+  br i1 %".98", label %".100", label %".102"
+.100:
+  br label %".53"
+.102:
+  %".103" = load i32, i32* %".3"
+  %".104" = call i8 @"main$prime"(i32 %".103")
+  %".105" = icmp ne i8 %".104", 0
+  br i1 %".105", label %".107", label %".116"
+.107:
+  %".108" = load i32, i32* %".4"
+  %".109" = add i32 %".108", 1
+  store i32 %".109", i32* %".4"
+  %".111" = load i32, i32* %".3"
+  call void @"writeInteger"(i32 %".111")
+  %".113" = bitcast [2 x i8]* @"str2" to i8*
+  call void @"writeString"(i8* %".113")
+  br label %".121"
+.116:
+  br label %".121"
+.121:
+  %".122" = load i32, i32* %".3"
+  %".123" = add i32 %".122", 4
+  store i32 %".123", i32* %".3"
+  br label %".63"
+.133:
+  %".134" = bitcast [8 x i8]* @"str3" to i8*
+  call void @"writeString"(i8* %".134")
+  %".136" = load i32, i32* %".4"
+  call void @"writeInteger"(i32 %".136")
+  %".138" = bitcast [2 x i8]* @"str2" to i8*
+  call void @"writeString"(i8* %".138")
+  br label %"exit"
+exit:
+  call void @"exit"(i8 0)
+  ret void
+}
+
+define i8 @"main$prime"(i32 %"n") 
+{
+entry:
+  %".3" = alloca i32
+  %".4" = alloca i32
+  store i32 %"n", i32* %".4"
+  br label %".7"
+.7:
+  %".8" = load i32, i32* %".4"
+  %".9" = icmp slt i32 %".8", 0
+  br i1 %".9", label %".11", label %".16"
+.11:
+  %".12" = load i32, i32* %".4"
+  %".13" = sub i32 0, %".12"
+  %".14" = call i8 @"main$prime"(i32 %".13")
+  ret i8 %".14"
+.16:
+  store i32 3, i32* %".3"
+  br label %".19"
+.19:
+  %".20" = load i32, i32* %".3"
+  %".21" = load i32, i32* %".4"
+  %".22" = sdiv i32 %".21", 2
+  %".23" = icmp sgt i32 %".20", %".22"
+  br i1 %".23", label %".25", label %".27"
+.25:
+  br label %".47"
+.27:
+  %".28" = load i32, i32* %".4"
+  %".29" = load i32, i32* %".3"
+  %".30" = srem i32 %".28", %".29"
+  %".31" = icmp eq i32 %".30", 0
+  br i1 %".31", label %".33", label %".35"
+.33:
+  ret i8 0
+.35:
+  br label %".39"
+.39:
+  %".40" = load i32, i32* %".3"
+  %".41" = add i32 %".40", 2
+  store i32 %".41", i32* %".3"
+  br label %".19"
+.47:
+  ret i8 1
+exit:
+  unreachable
+}
+
+@"str0" = unnamed_addr constant [8 x i8] c"Limit: \00"
+@"str1" = unnamed_addr constant [9 x i8] c"Primes:\0a\00"
+@"str2" = unnamed_addr constant [2 x i8] c"\0a\00"
+@"str3" = unnamed_addr constant [8 x i8] c"Total: \00"

@@ -1,52 +1,50 @@
 class Table(dict):
     def __init__(self):
         super().__init__()
-        self.args = [] 
-        self.defs = [] 
-        self.decls = []
-        self.funcs = []
-        self.parents = []
+        self.stype = dict()
+        self.referenced = set() 
         self.function = None
+        self.args_ordered = []
 
+    def __getitem__(self, key):
+        if key and key in self.keys() and self.stype[key] == "parent":
+            self.referenced.add(key)
+        return super().__getitem__(key)
 
-    def register(self, symbols):
+    def register(self, symbols, stype):
         for symbol in symbols:
-           self[symbol.name] = symbol.type
+            self[symbol.name] = symbol.type
+            self.stype[symbol.name] = stype
  
 
     def extend_decls(self, decls):
-        self.decls += decls
-        self.register(decls)
+        self.register(decls, "decl")
 
 
     def extend_defs(self, defs):
-        self.defs += defs
-        self.register(defs)
+        self.register(defs, "def")
 
 
     def extend_funcs(self, funcs):
-        self.funcs += funcs
-        self.register(funcs)
+        self.register(funcs, "func")
 
 
     def extend_args(self, args):
-        self.args += args
-        self.register(args)
+        self.register(args, "arg")
+        self.args_ordered += [symbol.name for symbol in args]
 
     def __copy__(self):
         new_table = Table() 
 
-        new_table.extend_decls(self.decls)
-        new_table.extend_defs(self.defs)
-        new_table.extend_funcs(self.funcs)
-        new_table.extend_args(self.args)
+        for name in self.stype:
+            if self.stype[name] == "func":
+                new_table.stype[name] = "func"
+            else:
+                new_table.stype[name] = "parent" 
 
-        new_table.parent = self.decls + self.defs + self.args
-        # Avoid duplicates
-        new_table.parent += [func for func in self.funcs if not func in self.decls]
         new_table.function = self.function
 
         for key in self.keys():
-            new_table[key] = self[key]
+            new_table[key] = super().__getitem__(key)
 
         return new_table

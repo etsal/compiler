@@ -16,7 +16,7 @@ class DanaType(object):
     # From it, we can construct new types by either
     # turning it into a reference, or by turning it
     # into an array of set size
-    def __init__(self, base, dims=[], args=None, ref=False):
+    def __init__(self, base, dims=[], args=None, is_ref=False, pdepth=0):
         if base not in self.base_types:
             raise DanaTypeError("Base type {} invalid".format(base))
         if base in ["logic", "void"] and dims != []:
@@ -25,7 +25,8 @@ class DanaType(object):
         self.base = base
         self.dims = dims
         self.args = args
-        self.ref = ref
+        self.is_ref = is_ref
+        self.pdepth = pdepth 
 
     def is_function(self):
         """Test whether the type is a function type.
@@ -35,26 +36,32 @@ class DanaType(object):
         """
         return self.args is not None
 
-    def is_ref(self):
-        return self.ref
-    
+    @property
     def is_pointer(self):
+        return self.pdepth > 0
+    
+    @property
+    def is_array(self):
         return len(self.dims) > 0
 
     def __str__(self):
         result = self.base
-        if self.is_ref():
+        if self.is_ref:
             result = "ref " + result
+        result += "[]" * self.pdepth
         for dim in self.dims: 
-            result += "[{}]".format(dim) if dim else "[]"
+            result += "[{}]".format(dim) 
         if self.args is not None:
             result += "({})".format(", ".join(map(str, self.args)))
         return result
 
+    # The comparison between the dims depends on the spec of the language,
+    # not sure whether the length of arrays matters - if it did, we would
+    # be severely constrained when using them as arguments
     def __eq__(self, other):
         return self.base == other.base and \
-               self.is_pointer() == other.is_pointer() and \
-               len(self.dims) == len(other.dims) 
+               self.pdepth + len(self.dims) == other.pdepth + len(other.dims)and \
+               self.args == other.args 
 
     def __ne__(self, other):
         return not self.__eq__(other)

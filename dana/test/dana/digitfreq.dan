@@ -7,20 +7,31 @@ def main
     begin
     (* Read digits until 0 is found *) 
     i := 0
-    loop:
+    loop loopOne:
         begin
         table[i] := 0
         if i = 9 : begin break end
         else : begin i := i + 1 end
         end
 
-    loop:
+    loop loopTwo:
         begin 
         digit := readInteger()
         if digit = 0: begin break end
         table[digit - 1] := table[digit - 1] + 1
 
         end
+
+
      
+    i := 0
+    loop:
+        begin 
+        writeInteger: table[i] 
+        i := i + 1
+        if i = 9: begin break end
+        end
+
+
     end
 

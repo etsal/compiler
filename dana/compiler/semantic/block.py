@@ -39,11 +39,20 @@ class DanaLoop(DanaBlock):
         if d_label:
             self.label = d_label.value
 
-        local_table = copy(table)
-        local_table[self.label] = DanaType("label")
+        tmp_label = None
+        if self.label in table:
+            tmp_label = table[self.label]
+        
+        table[self.label] = DanaType("label")
 
         d_block = d_stmt.find_first_child("p_block")
-        self.block = DanaContainer(local_table, d_block=d_block)
+        self.block = DanaContainer(table, d_block=d_block)
+        
+        if tmp_label:
+            table[self.label] = tmp_label
+        else:
+            del table[self.label]
+
 
 
 class DanaIf(DanaBlock):

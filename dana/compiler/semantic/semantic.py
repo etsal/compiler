@@ -13,15 +13,15 @@ builtins = [
     Symbol("writeInteger", DanaType("void", args=[DanaType("int")])),
     Symbol("writeByte", DanaType("void", args=[DanaType("byte")])),
     Symbol("writeChar", DanaType("void", args=[DanaType("byte")])),
-    Symbol("writeString", DanaType("void", args=[DanaType("byte", [0])])),
+    Symbol("writeString", DanaType("void", args=[DanaType("byte", pdepth=1)])),
     Symbol("readInteger", DanaType("int", args=[])),
     Symbol("readByte", DanaType("byte", args=[])),
     Symbol("readChar", DanaType("byte", args=[])),
-    Symbol("readString", DanaType("byte", [0], args=[])),
-    Symbol("strlen", DanaType("int", args=[DanaType("byte", [0])])),
-    Symbol("strcmp", DanaType("int", args=[DanaType("byte", [0]), DanaType("byte", [0])])),
-    Symbol("strcat", DanaType("byte", [0], args=[DanaType("byte", [0]), DanaType("byte", [0])])),
-    Symbol("strcpy", DanaType("byte", [0], args=[DanaType("byte", [0]), DanaType("byte", [0])])),
+    Symbol("readString", DanaType("void", args=[DanaType("int"), DanaType("byte", pdepth=1)])),
+    Symbol("strlen", DanaType("int", args=[DanaType("byte", pdepth=1)])),
+    Symbol("strcmp", DanaType("int", args=[DanaType("byte", pdepth=1), DanaType("byte", pdepth=1)])),
+    Symbol("strcat", DanaType("byte", pdepth=1, args=[DanaType("byte", pdepth=1), DanaType("byte", pdepth=1)])),
+    Symbol("strcpy", DanaType("byte", pdepth=1, args=[DanaType("byte", pdepth=1), DanaType("byte", pdepth=1)])),
     Symbol("extend", DanaType("int", args=[DanaType("byte")])),
     Symbol("shrink", DanaType("byte", args=[DanaType("int")])),
     Symbol("exit", DanaType("void", args=[DanaType("byte")])),
@@ -35,12 +35,14 @@ def get_type(d_type):
     base = d_type.find_first("p_data_type").value
 
     dims = list(const.value for const in  d_type.find_all("p_number"))
+
+    pdepth = 0
     if d_type.find_first("p_empty_brackets"):
-        dims = [0] + dims
+        pdepth = 1 
+        
+    is_ref = True if d_type.find_first("p_ref") else False
 
-    ref = True if d_type.find_first("p_ref") else False
-
-    return DanaType(base, dims=dims, ref=ref)
+    return DanaType(base, dims=dims, pdepth=pdepth, is_ref=is_ref)
 
 
 
@@ -56,7 +58,11 @@ def get_function_symbol(d_function):
     if not base:
         base = "void"
 
-    args = list(map(get_type, d_header.find_all("p_fpar_def")))
+    args = []
+    fpars = d_header.find_all("p_fpar_def")
+    for fpar in fpars:
+        ftype = get_type(fpar.find_first("p_fpar_type"))
+        args += [ftype] * len(fpar.find_all("p_name"))
 
     return Symbol(name, DanaType(base, args=args))
 
@@ -125,18 +131,24 @@ def produce_function(d_function, parent=None, global_table=Table(), is_main=Fals
 
         for symbol in symbols:
             if (symbol.name in local_table) and \
-                not (len([x for x in local_table.funcs if x.name == symbol.name]) == 1 and \
+               (local_table.stype[symbol.name] != "parent") and \
+                not (len([x for x in function.funcs if x == symbol.name]) == 1 and \
                     symbol.name in [decl.name for decl in local_table.decls]):
-                print("Lines {}: Name {} already defined in current scope"
+                raise ScopeError("Lines {}: Name {} already defined in current scope"
                       .format(d_function.linespan, symbol.name))
 
         register[local_def.name](symbols)
 
         if local_def.name == "p_func_def":
-            temp_table = copy(local_table)
-            new_function = produce_function(local_def, function, temp_table)
+            child_table = copy(local_table)
+            new_function = produce_function(local_def, function, child_table)
             function.children.append(new_function)
 
+            # We get all values that are referenced from inner scopes, and 
+            # note the ones that are not in an upper scope related to us 
+            for name in new_function.table.referenced:
+                if local_table.stype[name] == "parent":
+                    local_table.referenced.add(name)
 
     d_block = d_function.find_first_child("p_block")
     function.block = DanaContainer(local_table, d_block=d_block)
@@ -148,8 +160,7 @@ def produce_function(d_function, parent=None, global_table=Table(), is_main=Fals
 def produce_program(main_function):
     global_table = Table()
     global_table.function = (None, DanaType("void"))
-    for symbol in builtins:
-        global_table[symbol.name] = symbol.type
+    global_table.extend_funcs(builtins)
 
     return produce_function(main_function, global_table=global_table, is_main=True)
 

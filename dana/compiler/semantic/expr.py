@@ -69,6 +69,10 @@ class DanaConst(DanaExpr):
         value = const.value
         if const.value in ["true", "false"]:
             value = 1 if const.value == "true" else 0
+        elif isinstance(value, int):
+            value = const.value
+        else:
+            value = ord(ast.literal_eval(const.value)[0])
 
         dtype = DanaType("int") if const.name == "p_number" else DanaType("byte")
         self._set_attributes([], dtype, "const", value=value)
@@ -99,24 +103,27 @@ class DanaCall(DanaExpr):
 
 class DanaUnary(DanaExpr):
     def __init__(self, operator, operand, table):
+        pairs = dict({"!" : [DanaType("byte")], 
+                      "+" : [DanaType("int")],
+                      "-" : [DanaType("int")],
+                      "not" : [DanaType("logic"), DanaType("byte")],
+                     })
+        renamed = dict({"!" : "!", 
+                      "+" : "id",
+                      "(" : "id" ,
+                      "-" : "neg",
+                      "not" : "not",
+                     })
+
+
         super().__init__()
         child = DanaExpr.factory(operand, table)
-        if operator == "(":
-            self._set_attributes([child], child.type, "id")
-            return
+        if operator in pairs:
+            in_types(operand.linespan, pairs[operator], child.type)
+        
 
-        if operator == "+":
-            check_type(operand.linespan, child.type, DanaType("int"))
-            self._set_attributes([child], child.type, "id")
-            return
 
-        if (operator == "!" and child.type != DanaType("byte")) or \
-           (operator == "-" and child.type != DanaType("int")) or \
-           (operator == "not" and child.type != DanaType("logic")):
-            print("Lines {}: Operator {} for expression {}", operator, str(child.type))
-
-        operator = "neg" if operator == "-" else operator
-        self._set_attributes([child], child.type, operator)
+        self._set_attributes([child], child.type, renamed[operator])
         return
 
 
@@ -190,11 +197,19 @@ class DanaLvalue(DanaExpr):
             check_type(d_lvalue.linespan, expr.type, DanaType("int")) 
                     
         base = table[name]
-        if len(base.dims) < len(exprs):
+        dims = len(base.dims) + base.pdepth
+        if dims < len(exprs):
             raise TypeError("Invalid dereferencing")
 
-        dtype = DanaType(base.base, \
-                         dims=base.dims[len(exprs):], \
-                         args=base.args)
+        rest = len(exprs) - base.pdepth
+        if rest >= 0:
+            dtype = DanaType(base.base, \
+                             dims=base.dims[rest:], \
+                             args=base.args)
+        else:
+            dtype = DanaType(base.base, \
+                             dims=base.dims, \
+                             pdepth=(-rest), \
+                             args=base.args)
         
         self._set_attributes(exprs, dtype, "lvalue", value=name)

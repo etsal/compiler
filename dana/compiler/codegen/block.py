@@ -12,7 +12,7 @@ Return:
 blks -- A sequence of IR blocks
 """
 
-from compiler.codegen.expr import irgen_expr as irgen_expr, irtype as irtype
+from compiler.codegen.expr import irgen_expr as irgen_expr 
 from compiler.codegen.stmt import irgen_stmt as irgen_stmt
 from llvmlite import ir as ir
 
@@ -84,6 +84,15 @@ def irgen_loop(func, block, table):
     # Backpatching 
     for blk in blks:
         term= blk.terminator
+
+        # Must come before backpatching the breaks,
+        # or else they turn into continues
+        if term in table.nexts:
+            branch = ir.Branch(exit, "br", [entry])
+            (b, lab) = table.nexts[term]
+            backpatch(b, branch)
+            b.terminator = branch
+
         # Breaks out of the current loop are nexts 
         # to the basic block following it 
         if term in table.breaks:
@@ -101,6 +110,7 @@ def irgen_loop(func, block, table):
                 backpatch(b, branch)
                 b.terminator = branch 
 
+            
     return blks 
 
 

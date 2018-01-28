@@ -19,17 +19,25 @@ class DanaFunction(object):
     def symbol(self):
         return self.table.function
 
+    def return_specific(self, stype):
+        return [name for name in self.table.stype.keys() if self.table.stype[name] == stype]
+
+
     @property
-    def parents(self):
-        return self.table.parents
+    def parents(self): 
+        return self.return_specific("parent") 
 
     @property
     def defs(self):
-        return self.table.defs
+        return self.return_specific("def") 
 
     @property
     def args(self):
-        return self.table.args
+        return self.table.args_ordered 
+
+    @property
+    def funcs(self):
+        return self.return_specific("func") 
 
     def __str__(self):
         ret = "-------{}-------\n".format(str(self.symbol))

@@ -8,19 +8,16 @@ def main
         begin
         
         if n < 0: begin return: prime(-n) end
-        elif n < 0: begin return: prime(-n) end
-        elif n < 0: begin return: prime(-n) end
-        elif n < 0: begin return: prime(-n) end
         else:
             begin
             i := 3
-            loop:
+            loop :
                 begin
                 if i > n /2: begin break end
                 elif n% i = 0: begin return:false end
                 i := i + 2
-                return: true
                 end
+            return: true
             end 
 
         end
@@ -51,7 +48,10 @@ def main
         if number > limit: begin break end
         loop:
             begin
-            if number > limit: begin break end
+            if number > limit: 
+                begin 
+                break 
+                end
             elif prime(number):
                 begin
                 counter := counter + 1
@@ -69,7 +69,7 @@ def main
             number := number + 4
             end
         end
-    writeString: "\Total: "
+    writeString: "Total: "
     writeInteger: counter
     writeString: "\n"
     end   
