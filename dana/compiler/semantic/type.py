@@ -1,5 +1,3 @@
-from compiler.semantic.error import *
-
 class DanaType(object):
     """A type of the Dana language."""
     class DanaTypeError(Exception):

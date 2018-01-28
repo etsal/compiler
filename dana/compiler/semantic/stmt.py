@@ -1,7 +1,6 @@
 from compiler.semantic.symbol import Symbol as Symbol
 from compiler.semantic.expr import DanaExpr as DanaExpr
 from compiler.semantic.type import DanaType as DanaType
-from compiler.semantic.error import *
 
 class DanaStmt(object):
     optable = dict({"p_cont_stmt" : "continue",
@@ -49,7 +48,7 @@ class DanaStmt(object):
 
         proc_name = d_stmt.find_first("p_name").value
         actual = DanaType("void", args=types)
-        check_table(d_stmt.linespan, Symbol(proc_name, actual), table)
+        table.check_table(d_stmt.linespan, Symbol(proc_name, actual))
 
         self.value = proc_name
         self.exprs = exprs

@@ -7,7 +7,6 @@ from compiler.semantic.symbol import Symbol as Symbol
 from compiler.semantic.table import Table as Table
 from compiler.semantic.func import DanaFunction as DanaFunction
 from compiler.semantic.block import DanaContainer as DanaContainer
-from compiler.semantic.error import *
 
 builtins = [
     Symbol("writeInteger", DanaType("void", args=[DanaType("int")])),

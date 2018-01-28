@@ -1,4 +1,8 @@
 class Table(dict):
+
+    class ScopeError(Exception):
+        pass
+
     def __init__(self):
         super().__init__()
         self.stype = dict()
@@ -11,12 +15,21 @@ class Table(dict):
             self.referenced.add(key)
         return super().__getitem__(key)
 
+
+    def check_scope(self, line, name):
+        if name not in self:
+            raise ScopeError("L {}: Unknown symbol {}".format(line, name))
+
+    def check_table(self, line, symbol):
+        self.check_scope(line, symbol.name)
+        expected = self[symbol.name]
+        symbol.type.check_type(line, expected)
+
     def register(self, symbols, stype):
         for symbol in symbols:
             self[symbol.name] = symbol.type
             self.stype[symbol.name] = stype
  
-
     def extend_decls(self, decls):
         self.register(decls, "decl")
 

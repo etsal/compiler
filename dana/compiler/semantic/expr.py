@@ -1,7 +1,6 @@
 import ast
 from itertools import zip_longest as zip_longest
 from compiler.semantic.type import DanaType as DanaType
-from compiler.semantic.error import *
 
 class DanaExpr(object):
     def __init__(self):
@@ -84,7 +83,7 @@ class DanaCall(DanaExpr):
         exprs = [DanaExpr.factory(d_expr, table) for d_expr in d_exprs]
         types = [expr.type for expr in exprs]
 
-        check_scope(d_func_call.linespan, name, table)
+        table.check_scope(d_func_call.linespan, name)
         base = table[name].base
         dtype = DanaType(base, args=types)
         dtype.check_type(d_func_call.linespan, table[name])
@@ -170,7 +169,7 @@ class DanaLvalue(DanaExpr):
         # The function symbol
         d_id = d_lvalue.find_first("p_name")
         name = d_id.value
-        check_scope(d_lvalue.linespan, name, table)
+        table.check_scope(d_lvalue.linespan, name)
 
         # Get all indices
         d_exprs = d_lvalue.find_all("p_expr")
