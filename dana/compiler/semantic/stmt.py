@@ -66,7 +66,7 @@ class DanaStmt(object):
             exprs += [DanaExpr.factory(d_expr, table)]
             actual = exprs[0].type
 
-        check_type(d_stmt.linespan, expected, actual)
+        actual.check_type(d_stmt.linespan, expected)
 
         self.exprs = exprs
 
@@ -78,8 +78,7 @@ class DanaStmt(object):
 
         expected = lvalue.type
         actual = expr.type
-        check_type(d_stmt.linespan, expected, actual)
-        if actual not in [DanaType("int"), DanaType("byte")]:
-            raise DanaTypeError("Assignment to invalid type")
+        actual.check_type(d_stmt.linespan, expected)
+        actual.in_types(d_stmt.linespan, [DanaType("int"), DanaType("byte")])
 
         self.exprs = [lvalue, expr]

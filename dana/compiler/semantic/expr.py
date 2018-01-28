@@ -87,7 +87,7 @@ class DanaCall(DanaExpr):
         check_scope(d_func_call.linespan, name, table)
         base = table[name].base
         dtype = DanaType(base, args=types)
-        check_type(d_func_call.linespan, table[name], dtype)
+        dtype.check_type(d_func_call.linespan, table[name])
 
         dtype_base = DanaType(base)
         self._set_attributes(exprs, dtype_base, "call", value=name)
@@ -111,7 +111,7 @@ class DanaUnary(DanaExpr):
         super().__init__()
         child = DanaExpr.factory(operand, table)
         if operator in optype:
-            in_types(operand.linespan, optype[operator], child.type)
+            child.type.in_types(operand.linespan, optype[operator])
 
         self._set_attributes([child], child.type, renamed[operator])
         return
@@ -136,17 +136,18 @@ class DanaBinary(DanaExpr):
         super().__init__()
         op1 = DanaExpr.factory(arg1, table)
         op2 = DanaExpr.factory(arg2, table)
-        check_type(arg1.linespan, op1.type, op2.type)
+        optype = op2.type
+        optype.check_type(arg1.linespan, op1.type)
 
         if operator in self.binary_ops + self.comparison_ops: 
-            in_types(arg1.linespan, [DanaType("int"), DanaType("byte")], op1.type)
+            optype.in_types(arg1.linespan, [DanaType("int"), DanaType("byte")])
 
         if operator in self.bit_ops: 
-            check_type(arg1.linespan, DanaType("byte"), op1.type)
+            optype.check_type(arg1.linespan, DanaType("byte"))
 
         if operator in self.logic_ops: 
             logic_types = [DanaType("byte"), DanaType("logic"), DanaType("int")]
-            check_type(arg1.linespan, logic_types, op1.type)
+            optype.check_type(arg1.linespan, logic_types)
 
         operator = renamed[operator] if operator in renamed else operator
         self._set_attributes([op1, op2], op1.type, operator)
@@ -175,7 +176,7 @@ class DanaLvalue(DanaExpr):
         d_exprs = d_lvalue.find_all("p_expr")
         exprs = [DanaExpr.factory(d_expr, table) for d_expr in d_exprs]
         for expr in exprs:
-            check_type(d_lvalue.linespan, expr.type, DanaType("int")) 
+            expr.type.check_type(d_lvalue.linespan, DanaType("int")) 
                     
         # Make sure there are not too many indices
         base = table[name]

@@ -2,6 +2,8 @@ from compiler.semantic.error import *
 
 class DanaType(object):
     """A type of the Dana language."""
+    class DanaTypeError(Exception):
+        pass
 
     base_types = [
         "byte", "int",
@@ -35,6 +37,14 @@ class DanaType(object):
            [] denotes a function that takes no arguments.
         """
         return self.args is not None
+
+    def check_type(self, line, expected):
+        if self != expected:
+            raise DanaTypeError("L {}: Expected {}, got {}".format(line, expected, self))
+
+    def in_types(self, line, expected):
+        if not self in expected:
+            raise DanaTypeError("L {}: Expected one of {}, got {}".format(line, *expected, self))
 
     @property
     def is_pointer(self):
