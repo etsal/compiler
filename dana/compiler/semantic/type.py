@@ -18,9 +18,9 @@ class DanaType(object):
     # into an array of set size
     def __init__(self, base, dims=[], args=None, is_ref=False, pdepth=0):
         if base not in self.base_types:
-            raise DanaTypeError("Base type {} invalid".format(base))
+            raise self.DanaTypeError("Base type {} invalid".format(base))
         if base in ["logic", "void"] and dims != []:
-            raise DanaTypeError("Danatype {} cannot have dimensions {}".format(base, dims))
+            raise self.DanaTypeError("Danatype {} cannot have dimensions {}".format(base, dims))
 
         self.base = base
         self.dims = dims
