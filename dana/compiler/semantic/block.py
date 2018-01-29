@@ -42,21 +42,24 @@ class DanaLoop(DanaBlock):
 
         # Labels are the _only_ symbol that can be defined in a block,
         # so we handle their definitions here
-        tmp_label = None
-        if label in table:
-            if table.stype[label] != "parent":
-                table.check_absence(d_label.linespan, label)
-
+        old_type = "" 
         if label:
-            tmp_label = table[label]
+            if label in table and table.stype[label] != "parent":
+                table.check_absence(d_label.linespan, label)
+                old_type = table[label]
             table[label] = DanaType("label")
+
 
 
         d_block = d_stmt.find_first_child("p_block")
         self.block = DanaContainer(table, d_block=d_block)
 
         if label:
-            table[label] = tmp_label
+            del table[label]
+
+        if old_type != None: 
+            table[label] = old_type
+
 
 
 
