@@ -1,7 +1,7 @@
 class Symbol(object):
-    def __init__(self, name, dana_type):
+    def __init__(self, name, dtype):
         self.name = name
-        self.type = dana_type
+        self.type = dtype
 
     def __str__(self):
         return "({},{})".format(self.name, self.type)

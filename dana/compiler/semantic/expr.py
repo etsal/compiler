@@ -113,7 +113,6 @@ class DanaUnary(DanaExpr):
             child.type.in_types(operand.linespan, optype[operator])
 
         self._set_attributes([child], child.type, renamed[operator])
-        return
 
 
 class DanaBinary(DanaExpr):
