@@ -10,6 +10,7 @@ def irgen_stmt(stmt, builder, table):
                   "break" : irgen_break,
                   "call" : irgen_proc,
                   "assign" : irgen_assign,
+                  "skip" : irgen_skip,
                 })
     
     operator = stmt.operator
@@ -65,3 +66,9 @@ def irgen_assign(stmt, builder, table):
     expr = irgen_expr(stmt.exprs[1], builder, table)
     builder.store(expr, lvalue)
 
+
+def irgen_skip(stmt, builder, table):
+    """
+    Produce a skip statement
+    """
+    pass

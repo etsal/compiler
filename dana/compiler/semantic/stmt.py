@@ -8,6 +8,7 @@ class DanaStmt(object):
                     "p_proc_call" : "call",
                     "p_ret_stmt" : "ret",
                     "p_assign_stmt" : "assign",
+                    "p_skip_stmt" : "skip",
                    })
 
 
@@ -18,6 +19,7 @@ class DanaStmt(object):
                        "p_proc_call" : self.verify_call,
                        "p_ret_stmt" : self.verify_ret,
                        "p_assign_stmt" : self.verify_assign,
+                       "p_skip_stmt" : self.verify_skip,
                       })
 
         d_child = d_stmt.multifind_first(self.optable.keys())
@@ -76,3 +78,7 @@ class DanaStmt(object):
         expr.type.check_type(d_stmt.linespan, lvalue.type)
         expr.type.in_types(d_stmt.linespan, [DanaType("int"), DanaType("byte")])
 
+
+    def verify_skip(self, d_stmt, table):
+        """Verifies a skip statement against a symbol table""" 
+        pass

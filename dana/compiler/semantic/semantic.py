@@ -24,6 +24,7 @@ builtins = [
     Symbol("extend", DanaType("int", args=[DanaType("byte")])),
     Symbol("shrink", DanaType("byte", args=[DanaType("int")])),
     Symbol("exit", DanaType("void", args=[DanaType("byte")])),
+    Symbol("raise", DanaType("void", args=[DanaType("int")])),
 ]
 
 
