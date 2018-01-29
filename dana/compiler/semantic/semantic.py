@@ -28,34 +28,22 @@ builtins = [
 
 
 
-#Subtrees: <fpar-type> | <type> | <data-type>
-#Subtree: <type> | "ref" <data-type> | <data-type> "[" "]" ("[" <int-const> "]")*
 def get_type(d_type):
     base = d_type.find_first("p_data_type").value
-
     dims = list(const.value for const in  d_type.find_all("p_number"))
-
-    pdepth = 0
-    if d_type.find_first("p_empty_brackets"):
-        pdepth = 1 
-        
+    pdepth = 1 if d_type.find_first("p_empty_brackets") else 0 
     is_ref = True if d_type.find_first("p_ref") else False
-
     return DanaType(base, dims=dims, pdepth=pdepth, is_ref=is_ref)
 
 
 
-#Subtree: <id> ["is" <data-type>] [":" <fpar-def> (",", <fpar-def>)*]
-# Traverse function header, extracting the type of the function it refers to
 def get_function_symbol(d_function):
+    """Get the name, type, and argument types of a function"""
     d_header = d_function.find_first("p_header")
     name = d_header.find_first("p_name").value
 
-    base = d_header.find_first("p_maybe_data_type").find_first("p_data_type")
-    if base:
-        base = base.value
-    if not base:
-        base = "void"
+    d_type = d_header.find_first("p_maybe_data_type").find_first("p_data_type")
+    base = d_type.value if d_type else "void"
 
     args = []
     fpars = d_header.find_all("p_fpar_def")
@@ -67,90 +55,66 @@ def get_function_symbol(d_function):
 
 
 
-#Subtree: (<id>)+ "as" <fpar-type> | "var" (<id>)+ "is" <type>
-# Traverses both p_var_def and p_fpar_def tokens
-def get_variable_symbols(d_def):
-    variables = d_def.find_first("p_name")
-    var_type = d_def.find_first("p_d_type")
-    return [Symbol(var, var_type) for var in variables]
-
-
-def get_function_variables(d_function):
-    # Find all subtrees with definitions/declarations
-    d_header = d_function.find_first("p_header")
-    d_args = d_header.find_all("p_fpar_def")
-
-    d_local_def_list = d_function.find_first_child("p_local_def_list")
-    d_local_defs = []
-    if d_local_def_list:
-        d_local_defs = d_function.find_first("p_local_def_list") \
-                                       .multifind(["p_func_def", "p_func_decl", "p_var_def"])
-
-    return d_args + d_local_defs
-
-
 def produce_function(d_function, parent=None, global_table=Table(), is_main=False):
 
-    function_symbol = get_function_symbol(d_function)
-
-    local_table = copy(global_table)
-    local_table.function = function_symbol
-
-    register = dict({"p_var_def" : local_table.extend_defs,
-                     "p_fpar_def" : local_table.extend_args,
-                     "p_func_def" : local_table.extend_funcs,
-                     "p_func_decl" : local_table.extend_decls,
+    table = copy(global_table)
+    register = dict({"p_var_def" : table.extend_defs,
+                     "p_fpar_def" : table.extend_args,
+                     "p_func_def" : table.extend_funcs,
+                     "p_func_decl" : table.extend_decls,
                    })
     
-    stype = dict({"p_var_def" : "def", 
-                  "p_fpar_def" : "arg", 
-                  "p_func_def" : "func",
-                  "p_func_decl" : "decl",
-                })
+    stypes = dict({"p_var_def" : "def", 
+                   "p_fpar_def" : "arg", 
+                   "p_func_def" : "func",
+                   "p_func_decl" : "decl",
+                 })
 
-    function = DanaFunction(parent, local_table, block=None)
 
-    # Main isn't actually a function
+    table.function = get_function_symbol(d_function)
+    function = DanaFunction(parent, table, block=None)
+
+    # Main isn't actually a function, so it has no symbol
     function.is_main = is_main
     if not is_main:
-        local_table[function_symbol.name] = function_symbol.type
+        table[table.function.name] = table.function.type
 
-    for local_def in get_function_variables(d_function):
+
+    local_defs = d_function.multifind(["p_fpar_def", 
+                                       "p_func_def", 
+                                       "p_func_decl", 
+                                       "p_var_def",
+                                     ])
+    for local_def in local_defs:
         symbols = None
-        if local_def.name in ["p_func_decl", "p_func_def"]:
+        stype = stypes[local_def.name]
+        if stype in ["func", "decl"]:
             symbols = [get_function_symbol(local_def)]
 
-        elif local_def.name in ["p_var_def", "p_fpar_def"]:
+        elif stype in ["def", "arg"]:
             names = map(lambda name: name.value, local_def.find_all("p_name"))
             symbols = [Symbol(name, get_type(local_def)) for name in names]
 
-        else:
-            raise ValueError("Local definition is not declaration or definition")
 
-
-        for symbol in symbols:
-            if (symbol.name in local_table) and \
-               (local_table.stype[symbol.name] != "parent") and \
-                not (len([x for x in function.funcs if x == symbol.name]) == 1 and \
-                    symbol.name in [decl.name for decl in local_table.decls]):
-                raise ScopeError("Lines {}: Name {} already defined in current scope"
-                      .format(d_function.linespan, symbol.name))
+        # Check for conflicts before registering the new symbols
+        for name in map(lambda symbol: symbol.name, symbols):
+            table.check_conflicts(local_def.linespan, name)
 
         register[local_def.name](symbols)
 
         if local_def.name == "p_func_def":
-            child_table = copy(local_table)
+            # Create the new function 
+            child_table = copy(table)
             new_function = produce_function(local_def, function, child_table)
             function.children.append(new_function)
 
-            # We get all values that are referenced from inner scopes, and 
-            # note the ones that are not in an upper scope related to us 
+            # Get all values that are referenced from inner scopes and not defined here 
             for name in new_function.table.referenced:
-                if local_table.stype[name] == "parent":
-                    local_table.referenced.add(name)
+                if table.stype[name] == "parent":
+                    table.referenced.add(name)
 
     d_block = d_function.find_first_child("p_block")
-    function.block = DanaContainer(local_table, d_block=d_block)
+    function.block = DanaContainer(table, d_block=d_block)
 
     return function
 
