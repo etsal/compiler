@@ -4,11 +4,11 @@ from compiler.semantic.type import DanaType as DanaType
 
 class DanaStmt(object):
     optable = dict({"p_cont_stmt" : "continue",
-                    "p_break_stmt" : "break", 
+                    "p_break_stmt" : "break",
                     "p_proc_call" : "call",
                     "p_ret_stmt" : "ret",
                     "p_assign_stmt" : "assign",
-                  })
+                   })
 
 
     def __init__(self, d_stmt, table):
@@ -36,9 +36,8 @@ class DanaStmt(object):
         """Verifies a labeled (cont/break) statement against a symbol table"""
         d_label = d_stmt.find_first("p_name")
         if d_label:
-            label = Symbol(d_label.value, DanaType("label"))
-            self.label = label.name
-            check_table(d_stmt.linespan, label, table)
+            self.label = d_label.value
+            table.check_table(d_stmt.linespan, Symbol(self.label, DanaType("label")))
 
 
     def verify_call(self, d_stmt, table):

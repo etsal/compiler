@@ -1,5 +1,4 @@
 import ast
-from itertools import zip_longest as zip_longest
 from compiler.semantic.type import DanaType as DanaType
 
 class DanaExpr(object):
@@ -7,7 +6,7 @@ class DanaExpr(object):
         self._set_attributes([], DanaType("invalid"), None)
 
     @classmethod
-    def factory(self, d_expr, table):
+    def factory(cls, d_expr, table):
 
         # Because the parsing rule is cond : expr | xcond,
         # we get the child and work we that instead
@@ -23,7 +22,7 @@ class DanaExpr(object):
             return DanaCall(d_func_call, table)
 
         # Lvalues are also represented by DanaExpr, so
-        # because of the rule stmt : lvalue ":=" expr, 
+        # because of the rule stmt : lvalue ":=" expr,
         # d_expr might not actually be an expr
         d_lvalue = d_expr.find_first_child("p_lvalue")
         if d_expr.name == "p_lvalue":
@@ -38,8 +37,6 @@ class DanaExpr(object):
 
         elif len(args) == 2:
             return DanaBinary(d_expr.children[1], args[0], args[1], table)
-
-
 
 
     def _set_attributes(self, children, dtype, operator, value=None):
@@ -94,17 +91,17 @@ class DanaCall(DanaExpr):
 
 class DanaUnary(DanaExpr):
     def __init__(self, operator, operand, table):
-        optype = dict({"!" : [DanaType("byte")], 
-                      "+" : [DanaType("int")],
-                      "-" : [DanaType("int")],
-                      "not" : [DanaType("logic"), DanaType("byte")],
-                     })
-        renamed = dict({"!" : "!", 
-                      "+" : "id",
-                      "(" : "id" ,
-                      "-" : "neg",
-                      "not" : "not",
-                     })
+        optype = dict({"!" : [DanaType("byte")],
+                       "+" : [DanaType("int")],
+                       "-" : [DanaType("int")],
+                       "not" : [DanaType("logic"), DanaType("byte")],
+                      })
+        renamed = dict({"!" : "!",
+                        "+" : "id",
+                        "(" : "id",
+                        "-" : "neg",
+                        "not" : "not",
+                       })
 
 
         super().__init__()
@@ -125,11 +122,11 @@ class DanaBinary(DanaExpr):
                  comparison_ops + logic_ops
 
     def __init__(self, operator, arg1, arg2, table):
-        renamed = dict({"STAR" : "*", 
-                        "SLASH" : "/", 
-                        "PERCENT" : "%", 
+        renamed = dict({"STAR" : "*",
+                        "SLASH" : "/",
+                        "PERCENT" : "%",
                         "=" : "==",
-                      })
+                       })
 
         super().__init__()
         op1 = DanaExpr.factory(arg1, table)
@@ -137,13 +134,13 @@ class DanaBinary(DanaExpr):
         optype = op2.type
         optype.check_type(arg1.linespan, op1.type)
 
-        if operator in self.binary_ops + self.comparison_ops: 
+        if operator in self.binary_ops + self.comparison_ops:
             optype.in_types(arg1.linespan, [DanaType("int"), DanaType("byte")])
 
-        if operator in self.bit_ops: 
+        if operator in self.bit_ops:
             optype.check_type(arg1.linespan, DanaType("byte"))
 
-        if operator in self.logic_ops: 
+        if operator in self.logic_ops:
             logic_types = [DanaType("byte"), DanaType("logic"), DanaType("int")]
             optype.check_type(arg1.linespan, logic_types)
 
@@ -166,29 +163,28 @@ class DanaLvalue(DanaExpr):
 
 
         # The function symbol
-        d_id = d_lvalue.find_first("p_name")
-        name = d_id.value
+        name = d_lvalue.find_first("p_name").value
         table.check_scope(d_lvalue.linespan, name)
 
         # Get all indices
         d_exprs = d_lvalue.find_all("p_expr")
         exprs = [DanaExpr.factory(d_expr, table) for d_expr in d_exprs]
         for expr in exprs:
-            expr.type.check_type(d_lvalue.linespan, DanaType("int")) 
-                    
+            expr.type.check_type(d_lvalue.linespan, DanaType("int"))
+
         # Make sure there are not too many indices
         base = table[name]
         total_dims = len(base.dims) + base.pdepth
         if total_dims < len(exprs):
-            raise DanaTypeError("Invalid dereferencing")
+            raise DanaType.DanaTypeError("Invalid dereferencing")
 
-        # When we have both dimensions and pdepth, we have 
-        # a pointer to an array, not an array of pointers. 
+        # When we have both dimensions and pdepth, we have
+        # a pointer to an array, not an array of pointers.
         # That influences the type of the dereferenced expression
         dims, pdepth = (base.dims, base.pdepth)
         if len(exprs) > base.pdepth:
             dims = base.dims[(len(exprs) - base.pdepth):]
-            pdepth = 0 
+            pdepth = 0
         else:
             dims = base.dims
             pdepth = base.pdepth - len(exprs)
@@ -197,5 +193,5 @@ class DanaLvalue(DanaExpr):
                          dims=dims, \
                          pdepth=pdepth, \
                          args=base.args)
-        
+
         self._set_attributes(exprs, dtype, "lvalue", value=name)

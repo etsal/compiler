@@ -24,20 +24,20 @@ class DanaFunction(object):
 
 
     @property
-    def parents(self): 
-        return self.return_specific("parent") 
+    def parents(self):
+        return self.return_specific("parent")
 
     @property
     def defs(self):
-        return self.return_specific("def") 
+        return self.return_specific("def")
 
     @property
     def args(self):
-        return self.table.args_ordered 
+        return self.table.args_ordered
 
     @property
     def funcs(self):
-        return self.return_specific("func") 
+        return self.return_specific("func")
 
     def __str__(self):
         ret = "-------{}-------\n".format(str(self.symbol))

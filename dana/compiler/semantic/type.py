@@ -26,7 +26,7 @@ class DanaType(object):
         self.dims = dims
         self.args = args
         self.is_ref = is_ref
-        self.pdepth = pdepth 
+        self.pdepth = pdepth
 
     def is_function(self):
         """Test whether the type is a function type.
@@ -38,16 +38,16 @@ class DanaType(object):
 
     def check_type(self, line, expected):
         if self != expected:
-            raise DanaTypeError("L {}: Expected {}, got {}".format(line, expected, self))
+            raise self.DanaTypeError("L {}: Expected {}, got {}".format(line, expected, self))
 
     def in_types(self, line, expected):
         if not self in expected:
-            raise DanaTypeError("L {}: Expected one of {}, got {}".format(line, *expected, self))
+            raise self.DanaTypeError("L {}: Expected one of {}, got {}".format(line, *expected, self))
 
     @property
     def is_pointer(self):
         return self.pdepth > 0
-    
+
     @property
     def is_array(self):
         return len(self.dims) > 0
@@ -57,8 +57,8 @@ class DanaType(object):
         if self.is_ref:
             result = "ref " + result
         result += "[]" * self.pdepth
-        for dim in self.dims: 
-            result += "[{}]".format(dim) 
+        for dim in self.dims:
+            result += "[{}]".format(dim)
         if self.args is not None:
             result += "({})".format(", ".join(map(str, self.args)))
         return result
@@ -69,7 +69,7 @@ class DanaType(object):
     def __eq__(self, other):
         return self.base == other.base and \
                self.pdepth + len(self.dims) == other.pdepth + len(other.dims)and \
-               self.args == other.args 
+               self.args == other.args
 
     def __ne__(self, other):
         return not self.__eq__(other)

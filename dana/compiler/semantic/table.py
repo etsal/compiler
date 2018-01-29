@@ -6,7 +6,7 @@ class Table(dict):
     def __init__(self):
         super().__init__()
         self.stype = dict()
-        self.referenced = set() 
+        self.referenced = set()
         self.function = None
         self.args_ordered = []
 
@@ -36,7 +36,7 @@ class Table(dict):
         expected = self[symbol.name]
         symbol.type.check_type(line, expected)
 
-    def check_conflicts(self, line, name):
+    def check_conflicts(self, line, name, stype):
         """Check for invalid multiple definitions of a symbol"""
         try:
             self.check_absent(line, name)
@@ -45,15 +45,15 @@ class Table(dict):
             if old_stype == "parent":
                 pass
             # Check if it's a decl/def pair (in that order)
-            elif old_stype  == "decl" and stype != "func":
-                self.check_absent(line, name) 
+            elif old_stype == "decl" and stype != "func":
+                self.check_absent(line, name)
 
 
     def register(self, symbols, stype):
         """Put the symbol in the dict, along with its symbol type"""
         for symbol in symbols:
             self[symbol.name] = symbol.type
-            self.stype[symbol.name] = stype 
+            self.stype[symbol.name] = stype
 
     def extend_decls(self, decls):
         """Register the symbols in the list as function declarations"""
@@ -79,14 +79,14 @@ class Table(dict):
         Copy function that changes the stypes of the contents
         to show that they have been inherited by the parent scope
         """
-        new_table = Table() 
+        new_table = Table()
 
         # FIXME: Maybe making functions global will be a problem by shadowing?
         for name in self.stype:
             if self.stype[name] == "func":
                 new_table.stype[name] = "func"
             else:
-                new_table.stype[name] = "parent" 
+                new_table.stype[name] = "parent"
 
         new_table.function = self.function
 

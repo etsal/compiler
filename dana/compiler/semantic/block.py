@@ -1,4 +1,3 @@
-from copy import copy
 from compiler.semantic.stmt import DanaStmt as DanaStmt
 from compiler.semantic.expr import DanaExpr as DanaExpr
 from compiler.semantic.type import DanaType as DanaType
@@ -7,7 +6,7 @@ class DanaBlock(object):
     def __init__(self):
         self.label = ""
         self.cond = None
-        self.children = [] 
+        self.children = []
         self.stmts = None
 
     def __eq__(self, other):
@@ -38,24 +37,24 @@ class DanaLoop(DanaBlock):
         self.type = "loop"
 
         d_label = d_stmt.find_first_child("p_name")
-        label = d_label.value if d_label else "" 
+        label = d_label.value if d_label else ""
         self.label = label
-        
+
         # Labels are the _only_ symbol that can be defined in a block,
         # so we handle their definitions here
         tmp_label = None
-        if label in table: 
+        if label in table:
             if table.stype[label] != "parent":
                 table.check_absence(d_label.linespan, label)
 
         if label:
-            tmp_label = table[label] 
+            tmp_label = table[label]
             table[label] = DanaType("label")
-    
+
 
         d_block = d_stmt.find_first_child("p_block")
         self.block = DanaContainer(table, d_block=d_block)
-        
+
         if label:
             table[label] = tmp_label
 
@@ -63,7 +62,7 @@ class DanaLoop(DanaBlock):
 
 class DanaIf(DanaBlock):
     """
-    Dana if block, holds the subblocks and conditions 
+    Dana if block, holds the subblocks and conditions
     making up the if statement. In case of an elif chain,
     we treat the latter as an else statement and store it
     in our else path
@@ -97,7 +96,7 @@ class DanaIf(DanaBlock):
 class DanaContainer(DanaBlock):
     """
     Dana block container, holds a sequence of blocks.
-    Used to structure the blocks as a tree 
+    Used to structure the blocks as a tree
     """
     def __init__(self, table, d_block):
         super().__init__()
@@ -111,7 +110,10 @@ class DanaContainer(DanaBlock):
                 basic_block.append(d_stmt)
 
             else:
-                d_terminator = d_stmt.multifind_children(["p_continue_stmt", "p_ret_stmt", "p_break_stmt"])
+                d_terminator = d_stmt.multifind_children(["p_continue_stmt",
+                                                          "p_ret_stmt",
+                                                          "p_break_stmt"
+                                                         ])
 
                 if d_terminator:
                     basic_block.append(d_stmt)
@@ -133,4 +135,3 @@ class DanaContainer(DanaBlock):
         if basic_block:
             self.children += [DanaBasic(table, d_stmts=basic_block)]
             basic_block = []
-
