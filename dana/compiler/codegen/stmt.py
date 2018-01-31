@@ -1,5 +1,5 @@
-from compiler.codegen.expr import irgen_expr as irgen_expr, irgen_lvalue as irgen_lvalue, irgen_call as irgen_call 
-from llvmlite import ir as ir
+from compiler.codegen.expr import irgen_expr, irgen_lvalue, irgen_call 
+from llvmlite import ir
 
 def irgen_stmt(stmt, builder, table):
     """

@@ -1,6 +1,6 @@
-from compiler.semantic.stmt import DanaStmt as DanaStmt
-from compiler.semantic.expr import DanaExpr as DanaExpr
-from compiler.semantic.type import DanaType as DanaType
+from compiler.semantic.stmt import DanaStmt
+from compiler.semantic.expr import DanaExpr
+from compiler.semantic.type import DanaType
 
 class DanaBlock(object):
     def __init__(self):

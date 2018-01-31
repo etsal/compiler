@@ -1,15 +1,15 @@
 import sys
 from copy import copy
-from compiler.parser.lexer import lex as lex, tokens as tokens
-from compiler.parser.parser import parser as parser
-from compiler.semantic.semantic import produce_program as produce_program
-from compiler.semantic.symbol import Symbol as Symbol
-from compiler.semantic.type import DanaType as DanaType
-from compiler.semantic.semantic import builtins as builtins
-from compiler.codegen.type import irtype as irtype
-from compiler.codegen.block import irgen_block as irgen_block, backpatch as backpatch
+from compiler.parser.lexer import lex, tokens
+from compiler.parser.parser import parser
+from compiler.semantic.semantic import produce_program
+from compiler.semantic.table import Symbol
+from compiler.semantic.type import DanaType
+from compiler.semantic.semantic import builtins
+from compiler.codegen.type import irtype
+from compiler.codegen.block import irgen_block, backpatch
 import compiler.codegen.table as irtable
-from llvmlite import ir as ir
+from llvmlite import ir
 
 def irgen_decl(module, symbol, mangled, table):
     # Only base return types allowed, so we just use the base

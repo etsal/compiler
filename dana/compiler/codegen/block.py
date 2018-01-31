@@ -12,9 +12,9 @@ Return:
 blks -- A sequence of IR blocks
 """
 
-from compiler.codegen.expr import irgen_expr as irgen_expr 
-from compiler.codegen.stmt import irgen_stmt as irgen_stmt
-from llvmlite import ir as ir
+from compiler.codegen.expr import irgen_expr 
+from compiler.codegen.stmt import irgen_stmt
+from llvmlite import ir
 
 def mark_backpatch(builder, table):
     instr = builder.unreachable() 

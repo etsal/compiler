@@ -1,4 +1,4 @@
-from collections import deque as deque
+from collections import deque 
 
 # Simple method for doing a preorder traversal
 # of the AST using a deque

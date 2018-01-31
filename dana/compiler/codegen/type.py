@@ -1,4 +1,4 @@
-from llvmlite import ir as ir
+from llvmlite import ir 
 
 def irbase(base):
     ir_base = dict({"int"   : ir.IntType(32),

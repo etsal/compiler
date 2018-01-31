@@ -1,5 +1,5 @@
-from compiler.codegen.type import irtype as irtype
-from llvmlite import ir as ir
+from compiler.codegen.type import irtype
+from llvmlite import ir
 
 
 def irgen_string(string, builder, table):

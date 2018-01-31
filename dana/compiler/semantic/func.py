@@ -1,4 +1,4 @@
-from compiler.semantic.symbol import Symbol as Symbol
+from compiler.semantic.table import Symbol
 
 class DanaFunction(object):
     def __init__(self, parent, table, block):

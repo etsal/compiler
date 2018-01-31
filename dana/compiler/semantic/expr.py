@@ -1,5 +1,5 @@
 import ast
-from compiler.semantic.type import DanaType as DanaType
+from compiler.semantic.type import DanaType 
 
 class DanaExpr(object):
     def __init__(self):

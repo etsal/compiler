@@ -1,3 +1,7 @@
+from collections import namedtuple
+
+Symbol = namedtuple("Symbol", ["name", "type"])
+
 class Table(dict):
 
     class ScopeError(Exception):

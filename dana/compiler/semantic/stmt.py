@@ -1,6 +1,6 @@
-from compiler.semantic.symbol import Symbol as Symbol
-from compiler.semantic.expr import DanaExpr as DanaExpr
-from compiler.semantic.type import DanaType as DanaType
+from compiler.semantic.expr import DanaExpr
+from compiler.semantic.table import Symbol
+from compiler.semantic.type import DanaType
 
 class DanaStmt(object):
     optable = dict({"p_cont_stmt" : "continue",

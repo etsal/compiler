@@ -1,12 +1,11 @@
 import sys
 from copy import copy
-from compiler.parser.lexer import lex as lex, tokens as tokens
-from compiler.parser.parser import parser as parser
-from compiler.semantic.type import DanaType as DanaType
-from compiler.semantic.symbol import Symbol as Symbol
-from compiler.semantic.table import Table as Table
-from compiler.semantic.func import DanaFunction as DanaFunction
-from compiler.semantic.block import DanaContainer as DanaContainer
+from compiler.parser.lexer import lex, tokens
+from compiler.parser.parser import parser
+from compiler.semantic.type import DanaType
+from compiler.semantic.table import Table, Symbol
+from compiler.semantic.func import DanaFunction
+from compiler.semantic.block import DanaContainer
 
 builtins = [
     Symbol("writeInteger", DanaType("void", args=[DanaType("int")])),
