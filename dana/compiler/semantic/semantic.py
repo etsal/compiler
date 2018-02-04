@@ -128,7 +128,7 @@ def produce_function(d_function, parent=None, global_table=Table(), is_main=Fals
 
 def produce_program(main_function):
     global_table = Table()
-    global_table.function = (None, DanaType("void"))
+    global_table.function = Symbol(None, DanaType("void"))
     global_table.extend_funcs(builtins)
 
     return produce_function(main_function, global_table=global_table, is_main=True)

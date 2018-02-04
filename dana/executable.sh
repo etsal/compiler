@@ -12,5 +12,6 @@ python -m compiler.codegen.codegen test/dana/"$NAME".dan > asm/"$NAME".imm
 cd asm
 llc "$NAME".imm -o "$NAME".asm
 as "$NAME".asm -o "$NAME".o
-ld "$NAME".o lib.a -o "$NAME"
+ld "$NAME".o lib.a "/usr/lib/x86_64-linux-gnu/libc.a" -o "$NAME"
 ./"$NAME"
+
