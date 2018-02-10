@@ -37,10 +37,14 @@ def get_type(d_type):
 
 
 
-def get_function_symbol(d_function):
+def get_function_symbol(d_function, is_main=False):
     """Get the name, type, and argument types of a function"""
     d_header = d_function.find_first("p_header")
+
+    # If this is the program and not just a function, set the name accordingly
     name = d_header.find_first("p_name").value
+    if is_main:
+        name = "main"
 
     d_type = d_header.find_first("p_maybe_data_type").find_first("p_data_type")
     base = d_type.value if d_type else "void"
@@ -99,7 +103,7 @@ def create_child(local_def, function, table):
 def produce_function(d_function, parent=None, global_table=Table(), is_main=False):
 
     table = copy(global_table)
-    table.function = get_function_symbol(d_function)
+    table.function = get_function_symbol(d_function, is_main)
     function = DanaFunction(parent, table, block=None)
 
     # Main isn't actually a function, so it has no symbol
