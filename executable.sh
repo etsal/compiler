@@ -10,7 +10,7 @@ fi
 
 NAME="$1"
 
-python3 -m compiler.codegen.codegen compiler/tests/dana/"$NAME".dan > asm/"$NAME".imm
+python3 -m compiler.compiler compiler/tests/dana/"$NAME".dan > asm/"$NAME".imm
 cd asm
 # Compile the "standard library" of the language
 llc "builtins.imm" -o "builtins.asm"
