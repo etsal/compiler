@@ -1,4 +1,4 @@
-def solve
+def solve 
     def hanoi: rings as int, source target auxiliary as byte []
         (* Move does not do the actual swapping *)
         def move: source target as byte[]

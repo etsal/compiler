@@ -1,0 +1,7 @@
+[submodule "ply"]
+	path = dana/ply
+	url = https://github.com/dabeaz/ply.git
+
+[submodule "llvmlite"]
+	path = dana/llvmlite
+	url = https://github.com/numba/llvmlite.git
