@@ -4,7 +4,7 @@ dist:
 	python setup.py sdist
 
 install: 
-	pip install --upgrade dist/DanaCompiler*
+	pip3 install --upgrade dist/DanaCompiler*
 
 clean:
 	rm -rf DanaCompiler.egg-info dist
