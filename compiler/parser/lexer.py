@@ -9,7 +9,9 @@ separators = (
     'COMMA',
     'COLON',
     'ASSIGN',
-#    'NEWLINE',
+    'AUTO_END',
+    'WHITESPACE',
+    'TAB',
 )
 
 elements = (
@@ -39,7 +41,6 @@ operators = (
 reserved = {
     'and' : 'AND',
     'as' : 'AS',
-    'begin' : 'BEGIN',
     'break' : 'BREAK',
     'byte' : 'BYTE',
     'continue' : 'CONTINUE',
@@ -47,7 +48,6 @@ reserved = {
     'def' : 'DEF',
     'elif' : 'ELIF',
     'else' : 'ELSE',
-    'end' : 'END',
     'exit' : 'EXIT',
     'false' : 'FALSE',
     'if' : 'IF',
@@ -61,6 +61,8 @@ reserved = {
     'skip' : 'SKIP',
     'true' : 'TRUE',
     'var' : 'VAR',
+    'begin' : 'BEGIN',
+    'end' : 'END',
 }
 
 ignored = (
@@ -93,11 +95,18 @@ t_RBRACK = r'\]'
 t_COMMA = r','
 t_COLON = r':'
 t_ASSIGN = r':='
-t_ignore_WHITESPACE = r'\s'
 
-####################################
-#NOTE: Tabs are handled like spaces#
-####################################
+
+# Put here so that it gets counted for linepos
+def t_WHITESPACE(t):
+    r'\s'
+    return None
+    
+# Tabs are 8 spaces, so we manually update the lexer 
+def t_TAB(t):
+    r'\t'
+    t.lexer.lexpos += 7
+    return None
 
 def t_NEWLINE(t):
     r'\n+'
