@@ -9,3 +9,4 @@ install:
 clean:
 	rm -rf DanaCompiler.egg-info dist
 	find . -name \*.pyc -delete
+	find tests -type f ! -name \*.dan -delete
