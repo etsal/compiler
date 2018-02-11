@@ -204,8 +204,7 @@ def irgen(main):
 
     irgen_func(module, main, table)
 
-    print(module)
-
+    return module
 
 def test():
     try:

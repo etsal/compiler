@@ -19,7 +19,9 @@ if __name__ == "__main__":
 
         main_function = ast.children[0]
         function = produce_program(main_function)
-        irgen(function)
+        module = irgen(function)
+
+        print(module)
     except IOError:
         print("Unable to open file. Exiting...")
     except LexError:
