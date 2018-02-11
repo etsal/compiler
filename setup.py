@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="DanaCompiler",
-    version="0.9.0",
+    version="0.9.1",
     author="Aimilios Tsalapatis",
     author_email="emiltsal@yahoo.gr",
     url="",
