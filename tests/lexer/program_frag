@@ -1,6 +1,0 @@
-def main #This is a comment
-#Comment from the start
-	writeString "##Begin!" 
-	var v is int
-	v = 65 # "Wow!"##########
-
