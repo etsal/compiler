@@ -4,3 +4,5 @@ parsetab.py
 parser.out
 ast
 asm
+dist
+DanaCompiler.egg-info
