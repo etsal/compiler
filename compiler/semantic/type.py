@@ -42,7 +42,7 @@ class DanaType(object):
 
     def in_types(self, line, expected):
         if not self in expected:
-            raise self.DanaTypeError("L {}: Expected one of {}, got {}".format(line, *expected, self))
+            raise self.DanaTypeError("L {}: Expected one of {}, got {}".format(line, str(expected), self))
 
     @property
     def is_pointer(self):
