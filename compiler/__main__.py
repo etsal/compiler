@@ -1,4 +1,5 @@
-from compiler.parser.lexer import lex, tokens
+from compiler.parser.lexer import lex 
+from compiler.parser.tokrules import tokens
 from compiler.parser.parser import parser
 from compiler.semantic.semantic import produce_program
 from compiler.codegen.codegen import irgen 
@@ -56,7 +57,7 @@ def get_module(program):
     try:
         lexer = lex()
         yacc = parser(start='program')
-        ast = yacc.parse(program.read(), tracking=True, debug=False)
+        ast = yacc.parse(program.read(), tracking=True, debug=False, lexer=lexer)
 
         main_function = ast.children[0]
         function = produce_program(main_function)

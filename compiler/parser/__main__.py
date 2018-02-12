@@ -1,4 +1,5 @@
-from compiler.parser.lexer import lex, tokens
+from compiler.parser.lexer import lex 
+from compiler.parser.tokrules import tokens
 from compiler.parser.parser import parser
 
 from ply.lex import LexError
@@ -11,7 +12,7 @@ if __name__ == "__main__":
         program = open(sys.argv[1], 'r')
         lexer = lex()
         yacc = parser(start='program')
-        ast = yacc.parse(program.read(), tracking=True, debug=False)
+        ast = yacc.parse(program.read(), tracking=True, debug=False, lexer=lexer) 
 
         print(ast)
     except IOError:

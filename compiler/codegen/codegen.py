@@ -1,7 +1,5 @@
 import sys
 from copy import copy
-from compiler.parser.lexer import lex, tokens
-from compiler.parser.parser import parser
 from compiler.semantic.semantic import produce_program
 from compiler.semantic.table import Symbol
 from compiler.semantic.type import DanaType
@@ -206,20 +204,3 @@ def irgen(main):
 
     return module
 
-def test():
-    try:
-        program = open(sys.argv[1], 'r')
-    except IOError:
-        print("Unable to open file. Exiting...")
-        return
-    lexer = lex()
-    yacc = parser(start='program')
-    ast = yacc.parse(program.read(), tracking=True, debug=False)
-
-    main_function = ast.children[0]
-    function = produce_program(main_function)
-    irgen(function)
-
-
-if __name__ == "__main__":
-    test()

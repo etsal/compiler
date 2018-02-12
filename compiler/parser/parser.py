@@ -1,6 +1,7 @@
 import sys
 from functools import wraps
-from compiler.parser.lexer import lex, tokens
+from compiler.parser.lexer import lex 
+from compiler.parser.tokrules import tokens
 from compiler.parser.node import Node
 from ply.yacc import yacc
 
@@ -238,7 +239,7 @@ def p_elif_chain(p):
 @ast_node()
 def p_block(p):
     '''
-        block : BEGIN stmt_list END
+        block : stmt_list AUTO_END
     '''
 
 
@@ -378,24 +379,4 @@ def p_error(p):
     return
 
 def parser(start):
-    return yacc(start=start, write_tables=False)
-
-def test():
-    lexer = lex()
-    try:
-        program = open(sys.argv[1], 'r')
-    except IOError:
-        print("Unable to open file. Exiting...")
-        return
-
-
-    test_parser = yacc(start='program', write_tables=False)
-
-    ast = test_parser.parse(program.read(), debug=False)
-    print(ast)
-
-    return
-
-
-if __name__ == "__main__":
-    test()
+    return yacc(start=start, write_tables=False, check_recursion=False)

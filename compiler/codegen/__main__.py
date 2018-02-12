@@ -1,4 +1,5 @@
-from compiler.parser.lexer import lex, tokens
+from compiler.parser.lexer import lex
+from compiler.parser.tokrules import tokens
 from compiler.parser.parser import parser
 from compiler.semantic.semantic import produce_program
 from compiler.codegen.codegen import irgen 

@@ -1,7 +1,5 @@
 import sys
 from copy import copy
-from compiler.parser.lexer import lex, tokens
-from compiler.parser.parser import parser
 from compiler.semantic.type import DanaType
 from compiler.semantic.table import Table, Symbol
 from compiler.semantic.func import DanaFunction
@@ -137,24 +135,3 @@ def produce_program(main_function):
 
     return produce_function(main_function, global_table=global_table, is_main=True)
 
-
-
-def test():
-    try:
-        program = open(sys.argv[1], 'r')
-    except IOError:
-        print("Unable to open file. Exiting...")
-        return
-
-    lexer = lex()
-    yacc = parser(start='program')
-
-    ast = yacc.parse(program.read(), tracking=True, debug=False)
-    main_function = ast.children[0]
-    produce_program(main_function)
-
-    return
-
-
-if __name__ == "__main__":
-    test()
