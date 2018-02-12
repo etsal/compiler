@@ -2,23 +2,16 @@ def main
     var r is byte [32]
     def reverse: s as byte []
         var i l is int
-
-        begin 
+         
         l := strlen(s)
         i := 0
         loop: 
-            begin
             if i < l: 
-                begin
                 r[i] := s[l-i-1]
                 i := i+1
-                end
-            else: begin break end
-            end 
+            else:  break 
         r[i] := '\0'
-        end
-
-    begin
+    
     reverse: "\n!dlrow olleH"
     writeString: r
-    end
+    

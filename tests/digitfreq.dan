@@ -4,34 +4,28 @@ def main
     var digit is int 
     var i is int
 
-    begin
+    
     (* Read digits until 0 is found *) 
     i := 0
     loop loopOne:
-        begin
         table[i] := 0
-        if i = 9 : begin break end
-        else : begin i := i + 1 end
-        end
+        if i = 9 :  
+            break 
+        else:  
+            i := i + 1 
+        
 
     loop loopTwo:
-        begin 
+         
         digit := readInteger()
-        if digit = 0: begin break end
+        if digit = 0:  
+            break 
         table[digit - 1] := table[digit - 1] + 1
-
-        end
-
-
      
     i := 0
     loop:
-        begin 
         writeInteger: table[i] 
         i := i + 1
-        if i = 9: begin break end
-        end
-
-
-    end
-
+        if i = 9:  
+            break 
+        

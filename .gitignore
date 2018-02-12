@@ -6,3 +6,10 @@ ast
 asm
 dist
 DanaCompiler.egg-info
+tests/*.asm
+tests/*.imm
+tests/hanoi
+tests/prime
+tests/digitfreq
+tests/bsort
+tests/reverse

@@ -5,72 +5,72 @@ def main
     def prime is byte: n as int
         var i is int
 
-        begin
         
-        if n < 0: begin return: prime(-n) end
+        
+        if n < 0:  return: prime(-n) 
         else:
-            begin
+            
             i := 3
             loop :
-                begin
-                if i > n /2: begin break end
-                elif n% i = 0: begin return:false end
+                
+                if i > n /2:  break 
+                elif n% i = 0:  return:false 
                 i := i + 2
-                end
+                
             return: true
-            end 
+             
 
-        end
+        
     
     var limit number counter is int
 
-    begin
+    
 
     writeString: "Limit: "
     limit := readInteger()
     writeString: "Primes:\n"
     counter := 0
     if limit >= 2:
-        begin
+        
         counter := counter + 1
         writeInteger: 2
         writeString: "\n"
-        end 
+         
     if limit >= 3:
-        begin
+        
         counter := counter + 1
         writeInteger: 3
         writeString: "\n"
-        end 
+         
     number := 5
     loop:
-        begin
-        if number > limit: begin break end
+        
+        if number > limit:  break 
         loop:
-            begin
+            
             if number > limit: 
-                begin 
+                 
                 break 
-                end
+                
             elif prime(number):
-                begin
+                
                 counter := counter + 1
                 writeInteger: number
                 writeString: "\n"
-                end 
+                 
             number := number + 2
-            if number > limit: begin break end
+            if number > limit:  break 
             elif prime(number):
-                begin
+                
                     counter := counter + 1
                     writeInteger: number
                     writeString: "\n"
-                end
+                
             number := number + 4
-            end
-        end
+            
+        
     writeString: "Total: "
     writeInteger: counter
     writeString: "\n"
-    end   
+       
 
